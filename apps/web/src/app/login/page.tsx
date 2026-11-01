@@ -49,10 +49,12 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">
       <div className="w-full max-w-md bg-surface border border-border rounded-2xl shadow-xl p-8">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl shadow-md shadow-primary/20">
-              চি
-            </div>
+          <Link href="/" className="inline-flex items-center gap-2.5 mb-4 group">
+            <img
+              src="/brand/logo/logo-symbol.svg"
+              alt="CHITHI"
+              className="w-10 h-10 rounded-xl shadow-md shadow-primary/20 object-contain group-hover:scale-105 transition-transform"
+            />
             <span className="text-2xl font-bold tracking-tight">CHITHI</span>
           </Link>
           <h2 className="text-2xl font-bold tracking-tight">Welcome back</h2>

@@ -28,9 +28,11 @@ export default function WelcomePage() {
       <header className="border-b border-border bg-surface/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl shadow-lg shadow-primary/20">
-              চি
-            </div>
+            <img
+              src="/brand/logo/logo-symbol.svg"
+              alt="CHITHI"
+              className="w-10 h-10 rounded-xl shadow-lg shadow-primary/20 object-contain"
+            />
             <span className="text-xl font-bold tracking-tight">CHITHI</span>
           </div>
 

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <pattern id="chithi-pattern" x="0" y="0" width="128" height="128" patternUnits="userSpaceOnUse">
+      <!-- Minimalist geometric folded letter shape -->
+      <path d="M32 24 h64 c8 0 16 8 16 16 v48 c0 8 -8 16 -16 16 H48 l-16 16 v-16 H24 c-8 0 -16 -8 -16 -16 V40 c0 -8 8 -16 16 -16 h8" 
+            fill="none" stroke="#19C6C5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.25" />
+      <!-- Envelope V fold -->
+      <path d="M28 36 l36 28 c2.5 2 6.5 2 9 0 l36 -28" 
+            fill="none" stroke="#253B80" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.3" />
+      <!-- Communication Spark Dot -->
+      <circle cx="68" cy="74" r="4" fill="#19C6C5" fill-opacity="0.4" />
+      <!-- Secondary offset mini dot -->
+      <circle cx="120" cy="18" r="2.5" fill="#253B80" fill-opacity="0.25" />
+    </pattern>
+  </defs>
+  <rect width="256" height="256" fill="url(#chithi-pattern)" />
+</svg>

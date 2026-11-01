@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 200" width="100%" height="100%">
+  <!-- Standalone Symbol on Left -->
+  <g transform="translate(10, 10) scale(0.35)">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="chithi-symbol-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#253B80" />
+      <stop offset="50%" stop-color="#192854" />
+      <stop offset="100%" stop-color="#101828" />
+    </linearGradient>
+    <linearGradient id="chithi-teal-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22E4E3" />
+      <stop offset="100%" stop-color="#19C6C5" />
+    </linearGradient>
+    <filter id="chithi-symbol-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#101828" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Background Squircle Container -->
+  <rect x="24" y="24" width="464" height="464" rx="124" fill="url(#chithi-symbol-bg)" filter="url(#chithi-symbol-shadow)" />
+  
+  <!-- Outer Speech Bubble Tail (Seamlessly integrated into bottom-left) -->
+  <path d="M112 400 l-44 52 c-7.2 8.5 -20 3.4 -20 -7.8 v-58 c0 -6 3 -11.5 8 -14.6 L112 344 Z" fill="#19C6C5" />
+
+  <!-- Master 'C' Monogram (Crafted from Folded Envelope Contour) -->
+  <path d="M382 142 H220 c-62 0 -112 50 -112 112 s50 112 112 112 h162 c16 0 26 -17 18 -30 l-46 -70 c-6 -9 -6 -21 0 -30 l46 -74 c8 -13 -2 -30 -18 -30 Z" 
+        fill="none" 
+        stroke="url(#chithi-teal-grad)" 
+        stroke-width="52" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" />
+
+  <!-- Diagonal Envelope Flap Creases (Negative Space V-fold) -->
+  <path d="M136 172 L236 248 c11.8 9 28.2 9 40 0 L376 172" 
+        fill="none" 
+        stroke="#FFFFFF" 
+        stroke-width="22" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" 
+        stroke-opacity="0.95" />
+
+  <!-- Central Connection / Spark Node -->
+  <circle cx="256" cy="256" r="22" fill="#FFFFFF" />
+</svg>
+  </g>
+
+  <!-- Wordmark on Right -->
+  <g transform="translate(210, 15)">
+    <text x="0" y="96" 
+          font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif" 
+          font-size="88" 
+          font-weight="900" 
+          letter-spacing="3" 
+          fill="#101828">CHITHI</text>
+
+    <text x="4" y="136" 
+          font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif" 
+          font-size="16" 
+          font-weight="800" 
+          letter-spacing="7" 
+          fill="#253B80">MESSENGER</text>
+    
+    <text x="246" y="136" 
+          font-family="'Noto Sans Bengali', -apple-system, sans-serif" 
+          font-size="15" 
+          font-weight="bold" 
+          fill="#253B80" 
+          fill-opacity="0.85">চিঠি</text>
+  </g>
+</svg>

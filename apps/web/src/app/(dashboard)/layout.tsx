@@ -84,9 +84,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-2xl animate-pulse shadow-lg shadow-primary/25">
-            চি
-          </div>
+          <img
+            src="/brand/logo/logo-symbol.svg"
+            alt="CHITHI"
+            className="w-12 h-12 rounded-2xl shadow-lg shadow-primary/25 animate-pulse object-contain"
+          />
           <p className="text-sm text-muted font-medium">Loading CHITHI...</p>
         </div>
       </div>
@@ -112,9 +114,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               href="/chats"
               className="flex items-center gap-3 px-2 py-1 rounded-2xl hover:bg-surface-muted transition-colors group"
             >
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-primary to-blue-500 flex items-center justify-center text-primary-foreground font-black text-xl shadow-md shadow-primary/25 flex-shrink-0 group-hover:scale-105 transition-transform">
-                চি
-              </div>
+              <img
+                src="/brand/logo/logo-symbol.svg"
+                alt="CHITHI"
+                className="w-11 h-11 rounded-2xl shadow-md shadow-primary/25 flex-shrink-0 group-hover:scale-105 transition-transform object-contain"
+              />
               <div className="hidden lg:flex flex-col">
                 <span className="text-xl font-black tracking-tight text-foreground">CHITHI</span>
                 <span className="text-[10px] font-semibold text-primary tracking-widest uppercase -mt-1">

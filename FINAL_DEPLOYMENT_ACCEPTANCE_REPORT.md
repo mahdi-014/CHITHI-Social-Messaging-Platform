@@ -148,3 +148,4 @@ The production Docker Compose configuration (`docker-compose.prod.yml`) defines 
 ## 8. Final Deployment Sign-Off
 
 The CHITHI Social Messaging Platform is **APPROVED FOR PRODUCTION DEPLOYMENT** under the active Feature Freeze policy.
+

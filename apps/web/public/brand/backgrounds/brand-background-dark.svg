@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <radialGradient id="bg-glow-1" cx="20%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#253B80" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#0B1220" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="bg-glow-2" cx="80%" cy="75%" r="55%">
+      <stop offset="0%" stop-color="#19C6C5" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#0B1220" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Base Solid Background -->
+  <rect width="1920" height="1080" fill="#0B1220" />
+
+  <!-- Ambient Light Orbs -->
+  <rect width="1920" height="1080" fill="url(#bg-glow-1)" />
+  <rect width="1920" height="1080" fill="url(#bg-glow-2)" />
+
+  <!-- Subtle Architectural Envelope Geometric Accent in Background -->
+  <g opacity="0.07">
+    <path d="M-100 400 L800 950 L1700 400" fill="none" stroke="#FFFFFF" stroke-width="40" stroke-linecap="round" />
+    <circle cx="800" cy="950" r="80" fill="#19C6C5" />
+  </g>
+</svg>
