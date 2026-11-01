@@ -11,7 +11,11 @@
     "build:web": "pnpm --filter @chithi/web build",
     "build": "pnpm --filter \"@chithi/*\" build",
     "test": "pnpm --filter \"@chithi/*\" test",
-    "lint": "pnpm --filter \"@chithi/*\" lint"
+    "lint": "pnpm --filter \"@chithi/*\" lint",
+    "db:backup": "node apps/api/scripts/backup-db.js",
+    "db:restore": "node apps/api/scripts/restore-db.js",
+    "db:cleanup": "node apps/api/scripts/cleanup-synthetic-test-data.js",
+    "db:verify": "node apps/api/scripts/verify-db-schema-constraints.js"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

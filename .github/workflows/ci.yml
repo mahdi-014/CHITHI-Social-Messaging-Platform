@@ -93,3 +93,22 @@ jobs:
           DATABASE_URL: postgresql://chithi:chithi_secret@localhost:5432/chithi_db
         run: node apps/api/scripts/verify-backup-recovery.js
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Production API Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          tags: chithi-api:latest
+
+      - name: Build Production Web Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: false
+          tags: chithi-web:latest
+
