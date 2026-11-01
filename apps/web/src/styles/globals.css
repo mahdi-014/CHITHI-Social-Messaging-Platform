@@ -63,6 +63,14 @@
   }
 }
 
+/* CHITHI Pure Borderless Architecture — Complete removal of all borders and outlines across full system */
+*, *::before, *::after {
+  border-width: 0 !important;
+  border-style: none !important;
+  border-color: transparent !important;
+  outline: none !important;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
