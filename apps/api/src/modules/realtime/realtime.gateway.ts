@@ -8,7 +8,7 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger } from '@nestjs/common';
+import { Logger, Inject, forwardRef } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { MessagesService } from '../messages/messages.service';
@@ -23,7 +23,7 @@ interface AuthenticatedSocket extends Socket {
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
     credentials: true,
   },
 })
@@ -37,6 +37,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    @Inject(forwardRef(() => MessagesService))
     private readonly messagesService: MessagesService,
     private readonly prisma: PrismaService,
   ) {}
@@ -123,6 +124,31 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     return { success: true };
   }
 
+  async broadcastNewMessage(conversationId: string, senderId: string, message: any) {
+    if (!this.server) return;
+
+    // Emit to conversation room
+    this.server
+      .to(`conversation:${conversationId}`)
+      .emit('message:new', message);
+
+    // Also deliver to conversation members' individual rooms
+    const members = await this.prisma.conversationMember.findMany({
+      where: { conversationId, leftAt: null },
+      select: { userId: true },
+    });
+
+    for (const m of members) {
+      if (m.userId !== senderId) {
+        this.server.to(`user:${m.userId}`).emit('message:new', message);
+        this.server.to(`user:${m.userId}`).emit('conversation:update', {
+          conversationId,
+          lastMessage: message,
+        });
+      }
+    }
+  }
+
   @SubscribeMessage('message:send')
   async handleSendMessage(
     @ConnectedSocket() client: AuthenticatedSocket,
@@ -148,27 +174,6 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
           attachmentMediaIds: payload.attachmentMediaIds,
         },
       );
-
-      // Emit to conversation room
-      this.server
-        .to(`conversation:${payload.conversationId}`)
-        .emit('message:new', message);
-
-      // Also deliver to conversation members' individual rooms
-      const members = await this.prisma.conversationMember.findMany({
-        where: { conversationId: payload.conversationId, leftAt: null },
-        select: { userId: true },
-      });
-
-      for (const m of members) {
-        if (m.userId !== userId) {
-          this.server.to(`user:${m.userId}`).emit('message:new', message);
-          this.server.to(`user:${m.userId}`).emit('conversation:update', {
-            conversationId: payload.conversationId,
-            lastMessage: message,
-          });
-        }
-      }
 
       return { success: true, message };
     } catch (err: any) {

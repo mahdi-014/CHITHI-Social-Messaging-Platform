@@ -59,7 +59,17 @@ export default function ChatsPage() {
 
     setLoadingMessages(true);
     const socket = getSocket();
+    if (!socket.connected) {
+      socket.connect();
+    }
     socket.emit('conversation:join', activeConversationId);
+
+    const handleNewMessage = (msg: MessageItem) => {
+      if (msg && msg.conversationId === activeConversationId) {
+        appendMessage(activeConversationId, msg);
+      }
+    };
+    socket.on('message:new', handleNewMessage);
 
     apiFetch<{ messages: MessageItem[] }>(`/conversations/${activeConversationId}/messages?limit=50`)
       .then((res) => {
@@ -81,9 +91,10 @@ export default function ChatsPage() {
       .finally(() => setLoadingMessages(false));
 
     return () => {
+      socket.off('message:new', handleNewMessage);
       socket.emit('conversation:leave', activeConversationId);
     };
-  }, [activeConversationId, setMessages, user?.id]);
+  }, [activeConversationId, setMessages, appendMessage, user?.id]);
 
   // Scroll to bottom on new message
   useEffect(() => {
@@ -119,19 +130,36 @@ export default function ChatsPage() {
 
     const clientMsgId = crypto.randomUUID();
 
-    try {
-      const sent = await apiFetch<MessageItem>(`/conversations/${activeConversationId}/messages`, {
-        method: 'POST',
-        body: {
+    if (socket && socket.connected) {
+      socket.emit(
+        'message:send',
+        {
+          conversationId: activeConversationId,
           clientMessageId: clientMsgId,
           messageType: 'text',
           body: text,
         },
-      });
+        (res: any) => {
+          if (res?.message) {
+            appendMessage(activeConversationId, res.message);
+          }
+        },
+      );
+    } else {
+      try {
+        const sent = await apiFetch<MessageItem>(`/conversations/${activeConversationId}/messages`, {
+          method: 'POST',
+          body: {
+            clientMessageId: clientMsgId,
+            messageType: 'text',
+            body: text,
+          },
+        });
 
-      appendMessage(activeConversationId, sent);
-    } catch (err: any) {
-      console.error('Failed to send message:', err);
+        appendMessage(activeConversationId, sent);
+      } catch (err: any) {
+        console.error('Failed to send message:', err);
+      }
     }
   };
 

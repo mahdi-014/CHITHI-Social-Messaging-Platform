@@ -8,4 +8,5 @@ uploads/
 .env
 .env.*
 *.env
+apps/web/test/screenshots/
 

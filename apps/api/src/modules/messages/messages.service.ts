@@ -4,10 +4,13 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { SendMessageDto } from './dto/send-message.dto';
 import { FriendshipsService } from '../friendships/friendships.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 @Injectable()
 export class MessagesService {
@@ -16,6 +19,8 @@ export class MessagesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly friendshipsService: FriendshipsService,
+    @Inject(forwardRef(() => RealtimeGateway))
+    private readonly realtimeGateway?: RealtimeGateway,
   ) {}
 
   async sendMessage(senderId: string, conversationId: string, dto: SendMessageDto) {
@@ -189,6 +194,10 @@ export class MessagesService {
         },
       });
     });
+
+    if (this.realtimeGateway) {
+      this.realtimeGateway.broadcastNewMessage(conversationId, senderId, message);
+    }
 
     return message;
   }
