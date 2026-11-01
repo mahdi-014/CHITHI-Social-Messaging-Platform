@@ -19,6 +19,7 @@ import { useAuthStore } from '../../stores/auth.store';
 import { useChatStore } from '../../stores/chat.store';
 import { getSocket } from '../../lib/socket';
 import { apiFetch } from '../../lib/api';
+import { CallProvider } from '../../components/calling/CallProvider';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -100,8 +101,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   return (
-    <div className="flex h-screen bg-background text-foreground overflow-hidden">
-      {/* Desktop Navigation Sidebar */}
+    <CallProvider>
+      <div className="flex h-screen bg-background text-foreground overflow-hidden">
+        {/* Desktop Navigation Sidebar */}
       <aside className="hidden md:flex flex-col justify-between w-20 lg:w-64 border-r border-border bg-surface p-4 z-40">
         <div className="flex flex-col gap-6">
           {/* Logo */}
@@ -190,7 +192,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Link>
           );
         })}
-      </nav>
-    </div>
+        </nav>
+      </div>
+    </CallProvider>
   );
 }

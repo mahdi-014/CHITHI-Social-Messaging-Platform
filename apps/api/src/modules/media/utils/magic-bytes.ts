@@ -52,3 +52,4 @@ export function validateMediaMagicBytes(buffer: Buffer, declaredMimeType: string
       return true;
   }
 }
+

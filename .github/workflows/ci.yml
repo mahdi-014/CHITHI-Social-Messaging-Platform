@@ -92,3 +92,4 @@ jobs:
         env:
           DATABASE_URL: postgresql://chithi:chithi_secret@localhost:5432/chithi_db
         run: node apps/api/scripts/verify-backup-recovery.js
+

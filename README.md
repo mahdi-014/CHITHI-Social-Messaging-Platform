@@ -13,8 +13,11 @@ CHITHI is a private, friend-based social messaging platform combining instant on
    - Exact-username search only; no stranger recommendation algorithm or public discover feed.
    - Friend request acceptance establishes a canonical two-party friendship (`user_low_id < user_high_id`).
    - Direct chats and Moments visibility require active mutual friendship.
-3. **Real-Time Communication:**
-   - WebSocket transport via **Socket.IO**.
+3. **Real-Time Communication & WebRTC Calling:**
+   - WebSocket transport via **Socket.IO** for signaling, messaging, and presence.
+   - One-to-one **WebRTC Audio & Video Calling** with DTLS-SRTP peer-to-peer encryption.
+   - Coturn-compatible short-lived TURN credentials generated via RFC 5766 HMAC-SHA1.
+   - Microphone mute, camera toggle, Picture-in-Picture floating view, and duration tracking.
    - Delivery and read receipts.
    - Typing indicators and presence tracking.
    - Idempotency with client-generated message IDs.
@@ -73,20 +76,32 @@ This starts:
 
 ---
 
-## 🧪 Running Integration Tests
+## 🧪 Running Integration & WebRTC Calling Tests
 
-Run the comprehensive 38-rule end-to-end integration test suite:
+### 1. Functional Integration Tests (51 Tests)
 ```bash
-node --experimental-strip-types apps/api/test/integration-test.ts
+pnpm --filter @chithi/api exec ts-node test/integration-test.ts
 ```
-Expected output:
+
+### 2. Audio & Video Calling Signaling Suite (48 Tests)
+```bash
+pnpm --filter @chithi/api exec ts-node test/calling-test.ts
 ```
-========================================
-TOTAL TESTS: 38
-PASSED: 38
-FAILED: 0
-========================================
+
+### 3. Real Headless Browser WebRTC Calling E2E (19 Checks)
+```bash
+node apps/web/test/browser-calling.test.js
 ```
+
+---
+
+## 📚 Documentation
+- [Audio & Video Calling System (Phase 3.5)](AUDIO_VIDEO_CALLING.md)
+- [WebRTC Architecture & Signaling Protocol](WEBRTC_ARCHITECTURE.md)
+- [Coturn TURN Server Setup & Deployment](TURN_SERVER_SETUP.md)
+- [Calling REST & WebSocket API Specification](CALLING_API.md)
+- [Calling Verification & Test Report](CALLING_TEST_REPORT.md)
+- [Production Deployment Guide](DEPLOYMENT.md)
 
 ---
 

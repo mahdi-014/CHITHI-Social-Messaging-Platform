@@ -24,3 +24,4 @@ export interface StorageProvider {
 
   exists(key: string): Promise<boolean>;
 }
+

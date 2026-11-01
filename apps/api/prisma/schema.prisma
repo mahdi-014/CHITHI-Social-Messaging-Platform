@@ -84,8 +84,43 @@ enum NotificationType {
   post_comment
   group_invitation
   system
+  call_missed
 
   @@map("notification_type")
+}
+
+enum CallType {
+  audio
+  video
+
+  @@map("call_type")
+}
+
+enum CallStatus {
+  initiating
+  ringing
+  accepted
+  rejected
+  cancelled
+  missed
+  busy
+  ended
+  failed
+
+  @@map("call_status")
+}
+
+enum CallEndReason {
+  caller_hung_up
+  callee_hung_up
+  rejected
+  cancelled
+  missed_timeout
+  busy
+  connection_failed
+  error
+
+  @@map("call_end_reason")
 }
 
 enum DevicePlatform {
@@ -150,6 +185,8 @@ model User {
   devices              Device[]
   sessions             UserSession[]
   submittedReports     Report[]            @relation("ReporterRelation")
+  callsInitiated       CallSession[]       @relation("CallerSessions")
+  callsReceived        CallSession[]       @relation("ReceiverSessions")
 
   @@index([accountStatus, createdAt(sort: Desc)], map: "idx_users_status_created")
   @@map("users")
@@ -247,6 +284,7 @@ model Conversation {
   members        ConversationMember[]
   messages       Message[]        @relation("ConversationMessages")
   directPair     DirectConversationPair?
+  callSessions   CallSession[]
 
   @@index([updatedAt(sort: Desc)], map: "idx_conversations_updated")
   @@map("conversations")
@@ -535,4 +573,31 @@ model OutboxEvent {
 
   @@index([createdAt], map: "idx_outbox_unprocessed")
   @@map("outbox_events")
+}
+
+model CallSession {
+  id              String         @id @default(uuid()) @db.Uuid
+  conversationId  String         @map("conversation_id") @db.Uuid
+  callerId        String         @map("caller_id") @db.Uuid
+  receiverId      String         @map("receiver_id") @db.Uuid
+  callType        CallType       @map("call_type")
+  status          CallStatus     @default(initiating)
+  endReason       CallEndReason? @map("end_reason")
+  initiatedAt     DateTime       @default(now()) @map("initiated_at") @db.Timestamptz
+  ringingAt       DateTime?      @map("ringing_at") @db.Timestamptz
+  acceptedAt      DateTime?      @map("accepted_at") @db.Timestamptz
+  endedAt         DateTime?      @map("ended_at") @db.Timestamptz
+  durationSeconds Int            @default(0) @map("duration_seconds")
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  conversation    Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  caller          User           @relation("CallerSessions", fields: [callerId], references: [id], onDelete: Cascade)
+  receiver        User           @relation("ReceiverSessions", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt(sort: Desc)], map: "idx_calls_conversation_created")
+  @@index([callerId, createdAt(sort: Desc)], map: "idx_calls_caller_created")
+  @@index([receiverId, createdAt(sort: Desc)], map: "idx_calls_receiver_created")
+  @@index([status], map: "idx_calls_status")
+  @@map("call_sessions")
 }

@@ -23,4 +23,21 @@ export default () => ({
   cors: {
     origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   },
+  webrtc: {
+    turnSecret: process.env.TURN_SECRET || 'chithi_turn_secret_key_2026_dev',
+    turnUrls: process.env.TURN_URLS
+      ? process.env.TURN_URLS.split(',').map((u) => u.trim())
+      : [
+          'turn:localhost:3478?transport=udp',
+          'turn:localhost:3478?transport=tcp',
+        ],
+    stunUrls: process.env.STUN_URLS
+      ? process.env.STUN_URLS.split(',').map((u) => u.trim())
+      : [
+          'stun:stun.l.google.com:19302',
+          'stun:stun1.l.google.com:19302',
+          'stun:stun2.l.google.com:19302',
+        ],
+    turnTtlSeconds: parseInt(process.env.TURN_TTL_SECONDS || '86400', 10),
+  },
 });

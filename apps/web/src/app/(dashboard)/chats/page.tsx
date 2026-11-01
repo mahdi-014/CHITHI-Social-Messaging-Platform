@@ -17,8 +17,13 @@ import {
   Circle,
   MessageSquare,
   Users,
+  Phone,
+  Video,
+  History,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useWebRTCCall } from '../../../hooks/useWebRTCCall';
+import CallHistoryModal from '../../../components/calling/CallHistoryModal';
 
 export default function ChatsPage() {
   const { user } = useAuthStore();
@@ -33,6 +38,9 @@ export default function ChatsPage() {
     typingUsers,
     onlineUsers,
   } = useChatStore();
+
+  const { startCall } = useWebRTCCall();
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [inputText, setInputText] = useState('');
@@ -205,13 +213,22 @@ export default function ChatsPage() {
         {/* Header */}
         <div className="p-4 border-b border-border flex items-center justify-between">
           <h1 className="text-xl font-bold tracking-tight">Chats</h1>
-          <button
-            onClick={openNewChatModal}
-            className="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-            title="Start new conversation"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setHistoryModalOpen(true)}
+              className="p-2 rounded-xl text-muted hover:text-foreground hover:bg-surface-muted transition-colors"
+              title="Call History"
+            >
+              <History className="w-5 h-5" />
+            </button>
+            <button
+              onClick={openNewChatModal}
+              className="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              title="Start new conversation"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Search */}
@@ -334,6 +351,40 @@ export default function ChatsPage() {
                   </p>
                 </div>
               </div>
+
+              {/* Calling Action Buttons */}
+              {activeConv.otherParticipant && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() =>
+                      startCall(activeConv.id, 'audio', {
+                        id: activeConv.otherParticipant!.id,
+                        username: activeConv.otherParticipant!.username,
+                        displayName: activeConv.otherParticipant!.displayName,
+                        avatarMediaId: activeConv.otherParticipant!.avatarMediaId,
+                      })
+                    }
+                    title="Start Voice Call"
+                    className="p-2.5 rounded-xl text-foreground/80 hover:text-primary hover:bg-primary/10 transition-colors"
+                  >
+                    <Phone className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() =>
+                      startCall(activeConv.id, 'video', {
+                        id: activeConv.otherParticipant!.id,
+                        username: activeConv.otherParticipant!.username,
+                        displayName: activeConv.otherParticipant!.displayName,
+                        avatarMediaId: activeConv.otherParticipant!.avatarMediaId,
+                      })
+                    }
+                    title="Start Video Call"
+                    className="p-2.5 rounded-xl text-foreground/80 hover:text-primary hover:bg-primary/10 transition-colors"
+                  >
+                    <Video className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Messages Scroll Area */}
@@ -470,6 +521,13 @@ export default function ChatsPage() {
           </div>
         </div>
       )}
+
+      {/* Call History Modal */}
+      <CallHistoryModal
+        isOpen={historyModalOpen}
+        onClose={() => setHistoryModalOpen(false)}
+        onCallUser={(convId, type, peer) => startCall(convId, type, peer)}
+      />
     </div>
   );
 }

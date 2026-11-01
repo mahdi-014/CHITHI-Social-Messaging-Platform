@@ -13,6 +13,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { MessagesService } from '../messages/messages.service';
 import { PrismaService } from '../../database/prisma.service';
+import { CallsService } from '../calls/calls.service';
 
 interface AuthenticatedSocket extends Socket {
   data: {
@@ -39,6 +40,8 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly configService: ConfigService,
     @Inject(forwardRef(() => MessagesService))
     private readonly messagesService: MessagesService,
+    @Inject(forwardRef(() => CallsService))
+    private readonly callsService: CallsService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -84,6 +87,24 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
   handleDisconnect(client: AuthenticatedSocket) {
     const userId = client.data?.userId;
     if (userId) {
+      // Auto-terminate any active call session on disconnect
+      const activeCallId = this.callsService.getActiveCallId(userId);
+      if (activeCallId) {
+        this.callsService
+          .endCall(activeCallId, userId, 'connection_failed')
+          .then((call) => {
+            const peerId = call.callerId === userId ? call.receiverId : call.callerId;
+            this.server.to(`user:${peerId}`).emit('call:ended', {
+              callId: call.id,
+              reason: 'connection_failed',
+              durationSeconds: call.durationSeconds,
+            });
+          })
+          .catch((err) => {
+            this.logger.error(`Error auto-ending call on socket disconnect: ${err.message}`);
+          });
+      }
+
       const userSockets = this.onlineUsers.get(userId);
       if (userSockets) {
         userSockets.delete(client.id);
@@ -261,5 +282,204 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   isUserOnline(userId: string): boolean {
     return this.onlineUsers.has(userId);
+  }
+
+  // --- WEBRTC AUDIO & VIDEO CALLING SIGNALING PROTOCOL ---
+
+  @SubscribeMessage('call:invite')
+  async handleCallInvite(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: { conversationId: string; callType: 'audio' | 'video' },
+  ) {
+    const callerId = client.data.userId;
+    try {
+      const result = await this.callsService.initiateCall(callerId, payload);
+
+      // Relay incoming call invitation to receiver's user room
+      this.server.to(`user:${result.call.receiverId}`).emit('call:incoming', {
+        callId: result.call.id,
+        conversationId: result.call.conversationId,
+        callType: result.call.callType,
+        caller: result.call.caller,
+        iceServers: result.receiverIceServers,
+      });
+
+      return {
+        success: true,
+        call: result.call,
+        iceServers: result.callerIceServers,
+      };
+    } catch (err: any) {
+      this.logger.warn(`Call invite failed from ${callerId}: ${err.message}`);
+      return {
+        success: false,
+        error: err.message,
+        code: err.response?.code || 'CALL_FAILED',
+      };
+    }
+  }
+
+  @SubscribeMessage('call:ringing')
+  async handleCallRinging(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: { callId: string },
+  ) {
+    const calleeId = client.data.userId;
+    const call = await this.callsService.markRinging(payload.callId, calleeId);
+    if (call) {
+      this.server.to(`user:${call.callerId}`).emit('call:ringing', {
+        callId: call.id,
+      });
+      return { success: true };
+    }
+    return { success: false, message: 'Invalid call session' };
+  }
+
+  @SubscribeMessage('call:accept')
+  async handleCallAccept(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: { callId: string },
+  ) {
+    const calleeId = client.data.userId;
+    try {
+      const updated = await this.callsService.acceptCall(payload.callId, calleeId);
+      this.server.to(`user:${updated.callerId}`).emit('call:accepted', {
+        callId: updated.id,
+        callee: updated.receiver,
+      });
+      return { success: true, call: updated };
+    } catch (err: any) {
+      this.logger.error(`Call accept error: ${err.message}`);
+      return { success: false, error: err.message };
+    }
+  }
+
+  @SubscribeMessage('call:reject')
+  async handleCallReject(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: { callId: string; reason?: string },
+  ) {
+    const calleeId = client.data.userId;
+    try {
+      const updated = await this.callsService.rejectCall(payload.callId, calleeId, payload.reason);
+      this.server.to(`user:${updated.callerId}`).emit('call:rejected', {
+        callId: updated.id,
+        reason: updated.endReason,
+      });
+      return { success: true };
+    } catch (err: any) {
+      this.logger.warn(`Call reject error: ${err.message}`);
+      return { success: false, error: err.message };
+    }
+  }
+
+  @SubscribeMessage('call:cancel')
+  async handleCallCancel(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: { callId: string },
+  ) {
+    const callerId = client.data.userId;
+    try {
+      const updated = await this.callsService.cancelCall(payload.callId, callerId);
+      this.server.to(`user:${updated.receiverId}`).emit('call:cancelled', {
+        callId: updated.id,
+      });
+      return { success: true };
+    } catch (err: any) {
+      this.logger.warn(`Call cancel error: ${err.message}`);
+      return { success: false, error: err.message };
+    }
+  }
+
+  @SubscribeMessage('call:timeout')
+  async handleCallTimeout(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: { callId: string },
+  ) {
+    const updated = await this.callsService.timeoutCall(payload.callId);
+    if (updated) {
+      this.server.to(`user:${updated.callerId}`).emit('call:timeout', { callId: updated.id });
+      this.server.to(`user:${updated.receiverId}`).emit('call:missed', {
+        callId: updated.id,
+        callType: updated.callType,
+      });
+    }
+    return { success: true };
+  }
+
+  @SubscribeMessage('call:offer')
+  async handleCallOffer(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: { callId: string; receiverId?: string; sdp: any },
+  ) {
+    const userId = client.data.userId;
+    const call = await this.callsService.getCallById(userId, payload.callId);
+    if (!call) return { success: false, message: 'Call session not found' };
+
+    const targetUserId = call.callerId === userId ? call.receiverId : call.callerId;
+    this.server.to(`user:${targetUserId}`).emit('call:offer', {
+      callId: payload.callId,
+      callerId: userId,
+      sdp: payload.sdp,
+    });
+    return { success: true };
+  }
+
+  @SubscribeMessage('call:answer')
+  async handleCallAnswer(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: { callId: string; callerId?: string; sdp: any },
+  ) {
+    const userId = client.data.userId;
+    const call = await this.callsService.getCallById(userId, payload.callId);
+    if (!call) return { success: false, message: 'Call session not found' };
+
+    const targetUserId = call.callerId === userId ? call.receiverId : call.callerId;
+    this.server.to(`user:${targetUserId}`).emit('call:answer', {
+      callId: payload.callId,
+      calleeId: userId,
+      sdp: payload.sdp,
+    });
+    return { success: true };
+  }
+
+  @SubscribeMessage('call:ice-candidate')
+  async handleIceCandidate(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: { callId: string; targetUserId?: string; candidate: any },
+  ) {
+    const userId = client.data.userId;
+    const call = await this.callsService.getCallById(userId, payload.callId);
+    if (!call) return { success: false, message: 'Call session not found' };
+
+    const targetUserId =
+      payload.targetUserId || (call.callerId === userId ? call.receiverId : call.callerId);
+    this.server.to(`user:${targetUserId}`).emit('call:ice-candidate', {
+      callId: payload.callId,
+      fromUserId: userId,
+      candidate: payload.candidate,
+    });
+    return { success: true };
+  }
+
+  @SubscribeMessage('call:end')
+  async handleCallEnd(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: { callId: string; reason?: string },
+  ) {
+    const userId = client.data.userId;
+    try {
+      const updated = await this.callsService.endCall(payload.callId, userId, payload.reason);
+      const peerId = updated.callerId === userId ? updated.receiverId : updated.callerId;
+      this.server.to(`user:${peerId}`).emit('call:ended', {
+        callId: updated.id,
+        durationSeconds: updated.durationSeconds,
+        reason: updated.endReason,
+      });
+      return { success: true, call: updated };
+    } catch (err: any) {
+      this.logger.warn(`Call end error: ${err.message}`);
+      return { success: false, error: err.message };
+    }
   }
 }

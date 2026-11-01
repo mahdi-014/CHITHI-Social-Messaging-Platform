@@ -164,3 +164,4 @@ node apps/api/scripts/verify-backup-recovery.js
 - [x] **Parameterized Queries:** Prisma ORM utilized across all database interactions, eliminating SQL injection vulnerabilities.
 - [x] **CORS Whitelist:** Strict explicit origin whitelist matching production domain with credential support.
 - [x] **Non-Root Containers:** Dockerfiles run processes under unprivileged users (`chithiuser` / `nextjs`).
+

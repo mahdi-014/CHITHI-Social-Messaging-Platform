@@ -42,3 +42,16 @@
 - [x] Theme toggling (Light / Dark / System).
 - [x] Responsive navigation and mobile drawer.
 - [x] Integration test suite (38/38 tests passing).
+
+## Phase 3.5: Real-Time Audio & Video Calling
+- [x] Prisma Schema `CallSession`, `CallType`, `CallStatus`, `CallEndReason`.
+- [x] Short-lived Coturn-compatible TURN credential generator (RFC 5766 HMAC-SHA1).
+- [x] NestJS `CallsModule` (invite, accept, reject, cancel, timeout, end, history).
+- [x] Socket.IO Signaling Gateway (`call:invite`, `call:ringing`, `call:accept`, `call:reject`, `call:cancel`, `call:offer`, `call:answer`, `call:ice-candidate`, `call:end`).
+- [x] Frontend `useWebRTCCall` hook and centralized React `CallProvider`.
+- [x] Web Audio API synthesized ringback & incoming ringtones.
+- [x] Calling UI components: `IncomingCallModal`, `ActiveCallModal` (Video/Audio, PiP, Mute, Camera), `CallHistoryModal`.
+- [x] Chat Header Audio & Video call action buttons.
+- [x] Automated backend calling test suite (48/48 tests passed).
+- [x] Automated real browser WebRTC test suite with fake media devices (19/19 checks passed).
+- [x] Calling system documentation: `AUDIO_VIDEO_CALLING.md`, `WEBRTC_ARCHITECTURE.md`, `TURN_SERVER_SETUP.md`, `CALLING_API.md`, `CALLING_TEST_REPORT.md`.
