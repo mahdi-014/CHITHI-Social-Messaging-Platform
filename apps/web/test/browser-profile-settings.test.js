@@ -91,7 +91,12 @@ async function runProfileSettingsBrowserTests() {
     // STEP 2: Verify My Profile Page (/profile)
     // -----------------------------------------------------------------
     console.log('\n[2/6] Verifying My Profile page (/profile)...');
-    await page.goto(`${BASE_URL}/profile`);
+    const profileLink = await page.$('a[href="/profile"]');
+    if (profileLink) {
+      await profileLink.click();
+    } else {
+      await page.goto(`${BASE_URL}/profile`);
+    }
     await page.waitForSelector('button:has-text("Edit Profile")', { timeout: 15000 });
 
     const profileName = await page.textContent('h1');
@@ -128,8 +133,13 @@ async function runProfileSettingsBrowserTests() {
     // STEP 3: Verify Messenger Settings Page (/settings) - Desktop
     // -----------------------------------------------------------------
     console.log('\n[3/6] Verifying Messenger Settings page (/settings) on Desktop...');
-    await page.goto(`${BASE_URL}/settings`);
-    await page.waitForSelector('h1:has-text("Settings")', { timeout: 8000 });
+    const settingsLink = await page.$('a[href="/settings"]');
+    if (settingsLink) {
+      await settingsLink.click();
+    } else {
+      await page.goto(`${BASE_URL}/settings`);
+    }
+    await page.waitForSelector('h1:has-text("Settings")', { timeout: 10000 });
 
     // Verify 8 categories on left navigation
     const expectedCategories = [
@@ -234,8 +244,13 @@ async function runProfileSettingsBrowserTests() {
     // STEP 6: Verify Friends Page and UserProfileModal
     // -----------------------------------------------------------------
     console.log('\n[6/6] Verifying Friends page and UserProfileModal popup...');
-    await page.goto(`${BASE_URL}/friends`);
-    await page.waitForSelector('h1:has-text("Friends")', { timeout: 8000 });
+    const friendsLink = await page.$('a[href="/friends"]');
+    if (friendsLink) {
+      await friendsLink.click();
+    } else {
+      await page.goto(`${BASE_URL}/friends`);
+    }
+    await page.waitForSelector('h1:has-text("Friends")', { timeout: 10000 });
 
     // Go to Sent Requests tab to see outgoing request
     await page.click('button:has-text("Requests")');

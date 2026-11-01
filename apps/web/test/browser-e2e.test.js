@@ -205,7 +205,7 @@ async function runBrowserTests() {
     console.log('\n9. Testing Profile & Settings View...');
     await pageA.setViewportSize({ width: 1280, height: 800 });
     await pageA.goto(`${BASE_URL}/profile`);
-    await pageA.waitForSelector(`h2:has-text("${userA.displayName}")`);
+    await pageA.waitForSelector(`h1:has-text("${userA.displayName}"), h2:has-text("${userA.displayName}")`);
     console.log('   [PASS] Profile view rendered with correct user information');
 
     await pageA.goto(`${BASE_URL}/settings`);

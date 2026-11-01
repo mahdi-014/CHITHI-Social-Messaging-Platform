@@ -54,10 +54,7 @@ export default function MyProfilePage() {
   const [loadingFriends, setLoadingFriends] = useState(false);
 
   const loadProfile = async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+    if (!user) return;
     setLoading(true);
     try {
       const data = await apiFetch<any>(`/profiles/${user.id}`);
@@ -73,7 +70,7 @@ export default function MyProfilePage() {
 
   useEffect(() => {
     loadProfile();
-  }, [user?.id]);
+  }, [user]);
 
   // Load user's moments
   useEffect(() => {
@@ -181,7 +178,7 @@ export default function MyProfilePage() {
     }
   };
 
-  if (loading && !profileData && !user) {
+  if (loading) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
@@ -195,14 +192,6 @@ export default function MyProfilePage() {
   return (
     <div className="flex-1 overflow-y-auto bg-background">
       <div className="max-w-4xl mx-auto py-4 sm:py-6 px-3 sm:px-6">
-        {/* Save Feedback Floating Toast */}
-        {successNote && (
-          <div className="mb-4 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200 shadow-xs">
-            <Check className="w-4 h-4 flex-shrink-0" />
-            <span>Profile updated successfully</span>
-          </div>
-        )}
-
         {/* Main Messenger Profile Card */}
         <div className="bg-surface border border-border shadow-sm rounded-3xl overflow-hidden mb-6">
           {/* Cover Photo Banner */}

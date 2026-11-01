@@ -58,6 +58,7 @@ async function restoreDatabase(backupFilePath, targetDatabaseUrl) {
       'post_reactions',
       'post_comments',
       'notifications',
+      'call_sessions',
       'reports',
       'outbox_events',
     ];

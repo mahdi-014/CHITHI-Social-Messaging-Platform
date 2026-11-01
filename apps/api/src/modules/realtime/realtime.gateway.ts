@@ -22,9 +22,15 @@ interface AuthenticatedSocket extends Socket {
   };
 }
 
+const getCorsOrigins = () => {
+  const env = process.env.CORS_ORIGIN;
+  if (!env) return ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  return env.split(',').map((s) => s.trim());
+};
+
 @WebSocketGateway({
   cors: {
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: getCorsOrigins(),
     credentials: true,
   },
 })

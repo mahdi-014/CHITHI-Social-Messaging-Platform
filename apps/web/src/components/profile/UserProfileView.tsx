@@ -467,9 +467,9 @@ export default function UserProfileView({
         {/* User Identity Details */}
         <div className="text-center sm:text-left">
           <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
               {profile.displayName}
-            </h1>
+            </h2>
             {isOnline && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold self-center sm:self-auto">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -636,3 +636,4 @@ export default function UserProfileView({
     </div>
   );
 }
+

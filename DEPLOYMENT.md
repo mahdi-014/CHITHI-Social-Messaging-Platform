@@ -39,6 +39,9 @@ flowchart TD
 | `STORAGE_LOCAL_PATH` | Directory for local file storage | `/app/uploads` | No |
 | `S3_BUCKET` | AWS S3 / MinIO / R2 Bucket name | `chithi-media-prod` | When S3 |
 | `S3_ENDPOINT` | S3 API Endpoint | `https://s3.amazonaws.com` | When S3 |
+| `TURN_SECRET` | Secret key for Coturn RFC 5766 TURN authentication | Secure random string (min 32 chars) | When WebRTC |
+| `TURN_URLS` | Coturn TURN relay endpoints (comma-separated) | `turn:turn.domain.com:3478?transport=udp,turn:turn.domain.com:3478?transport=tcp` | When WebRTC |
+| `STUN_URLS` | STUN discovery servers (comma-separated) | `stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302` | When WebRTC |
 | `NEXT_PUBLIC_API_URL` | Frontend REST API base URL | `https://chithi.yourdomain.com/api/v1` | Yes |
 | `NEXT_PUBLIC_SOCKET_URL` | Frontend WebSocket base URL | `https://chithi.yourdomain.com` | Yes |
 

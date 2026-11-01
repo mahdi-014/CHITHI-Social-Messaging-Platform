@@ -14,17 +14,35 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
+  // Enable graceful shutdown on SIGTERM / SIGINT
+  app.enableShutdownHooks();
+
   app.use(
     helmet({
       contentSecurityPolicy: false,
       crossOriginEmbedderPolicy: false,
+      xFrameOptions: { action: 'sameorigin' },
+      xContentTypeOptions: true,
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     }),
   );
 
   app.use(cookieParser());
 
+  const corsOriginsEnv = process.env.CORS_ORIGIN;
+  const configuredOrigins = corsOriginsEnv
+    ? corsOriginsEnv.split(',').map((o) => o.trim())
+    : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, server-to-server, curl)
+      if (!origin || configuredOrigins.includes(origin) || configuredOrigins.includes('*')) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
     credentials: true,
   });
 

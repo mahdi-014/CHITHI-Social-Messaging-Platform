@@ -37,6 +37,12 @@ services:
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-local}
     volumes:
       - uploads_data:/app/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - chithi-network
 
@@ -54,6 +60,12 @@ services:
       PORT: 3000
       NEXT_PUBLIC_API_URL: http://localhost/api/v1
       NEXT_PUBLIC_SOCKET_URL: http://localhost
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - chithi-network
 
