@@ -610,6 +610,14 @@ export default function MyProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Success Toast */}
+      {successNote && (
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-emerald-600 text-white shadow-xl flex items-center gap-2 text-sm font-semibold animate-in slide-in-from-bottom duration-200">
+          <Check className="w-4 h-4" />
+          <span>Profile updated successfully</span>
+        </div>
+      )}
     </div>
   );
 }

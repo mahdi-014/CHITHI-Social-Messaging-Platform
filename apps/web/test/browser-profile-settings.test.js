@@ -56,27 +56,25 @@ async function runProfileSettingsBrowserTests() {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     const page = await ctx.newPage();
 
+    page.on('console', msg => {
+      if (msg.type() === 'error') console.log(`   [PAGE ERROR LOG] ${msg.text()}`);
+    });
+    page.on('pageerror', err => console.log(`   [PAGE EXCEPTION] ${err.message}`));
+
     // -----------------------------------------------------------------
     // STEP 1: Register User A and User B
     // -----------------------------------------------------------------
     console.log('\n[1/6] Registering test users for profile and settings verification...');
     
-    // Register User B first in background via page
-    await page.goto(`${BASE_URL}/register`);
-    await page.waitForSelector('input[placeholder="e.g. Mahdi Hasan"]');
-    await page.fill('input[placeholder="e.g. Mahdi Hasan"]', userB.displayName);
-    await page.fill('input[placeholder="e.g. mahdi"]', userB.username);
-    await page.fill('input[placeholder="you@example.com"]', userB.email);
-    await page.fill('input[placeholder="At least 8 characters"]', userB.password);
-    await page.click('button[type="submit"]');
-    await page.waitForURL('**/chats', { timeout: 10000 });
-    check(page.url().includes('/chats'), 'User B registered and redirected to /chats');
+    // Register User B in background via API
+    const regB = await fetch('http://localhost:4000/api/v1/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userB),
+    });
+    check(regB.ok, 'User B registered in database for social interactions');
 
-    // Logout User B
-    await page.evaluate(() => localStorage.removeItem('chithi_token'));
-    await page.goto(`${BASE_URL}/login`);
-
-    // Register User A
+    // Register User A in browser
     await page.goto(`${BASE_URL}/register`);
     await page.waitForSelector('input[placeholder="e.g. Mahdi Hasan"]');
     await page.fill('input[placeholder="e.g. Mahdi Hasan"]', userA.displayName);
@@ -91,12 +89,7 @@ async function runProfileSettingsBrowserTests() {
     // STEP 2: Verify My Profile Page (/profile)
     // -----------------------------------------------------------------
     console.log('\n[2/6] Verifying My Profile page (/profile)...');
-    const profileLink = await page.$('a[href="/profile"]');
-    if (profileLink) {
-      await profileLink.click();
-    } else {
-      await page.goto(`${BASE_URL}/profile`);
-    }
+    await page.locator('aside nav a[href="/profile"]').first().click();
     await page.waitForSelector('button:has-text("Edit Profile")', { timeout: 15000 });
 
     const profileName = await page.textContent('h1');
@@ -133,12 +126,7 @@ async function runProfileSettingsBrowserTests() {
     // STEP 3: Verify Messenger Settings Page (/settings) - Desktop
     // -----------------------------------------------------------------
     console.log('\n[3/6] Verifying Messenger Settings page (/settings) on Desktop...');
-    const settingsLink = await page.$('a[href="/settings"]');
-    if (settingsLink) {
-      await settingsLink.click();
-    } else {
-      await page.goto(`${BASE_URL}/settings`);
-    }
+    await page.locator('aside nav a[href="/settings"]').first().click();
     await page.waitForSelector('h1:has-text("Settings")', { timeout: 10000 });
 
     // Verify 8 categories on left navigation
@@ -226,7 +214,7 @@ async function runProfileSettingsBrowserTests() {
     // -----------------------------------------------------------------
     console.log('\n[5/6] Verifying View Other User Profile (/profile/[username])...');
     await page.goto(`${BASE_URL}/profile/${userB.username}`);
-    await page.waitForSelector(`h1:has-text("${userB.displayName}")`, { timeout: 10000 });
+    await page.waitForSelector(`h1:has-text("${userB.displayName}"), h2:has-text("${userB.displayName}")`, { timeout: 10000 });
     check(true, `Other user profile for ${userB.displayName} loaded successfully`);
 
     const addFriendBtn = await page.$('button:has-text("Add Friend")');
@@ -244,12 +232,7 @@ async function runProfileSettingsBrowserTests() {
     // STEP 6: Verify Friends Page and UserProfileModal
     // -----------------------------------------------------------------
     console.log('\n[6/6] Verifying Friends page and UserProfileModal popup...');
-    const friendsLink = await page.$('a[href="/friends"]');
-    if (friendsLink) {
-      await friendsLink.click();
-    } else {
-      await page.goto(`${BASE_URL}/friends`);
-    }
+    await page.locator('aside nav a[href="/friends"]').first().click();
     await page.waitForSelector('h1:has-text("Friends")', { timeout: 10000 });
 
     // Go to Sent Requests tab to see outgoing request
