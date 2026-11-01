@@ -15,7 +15,8 @@
     "db:backup": "node apps/api/scripts/backup-db.js",
     "db:restore": "node apps/api/scripts/restore-db.js",
     "db:cleanup": "node apps/api/scripts/cleanup-synthetic-test-data.js",
-    "db:verify": "node apps/api/scripts/verify-db-schema-constraints.js"
+    "db:verify": "node apps/api/scripts/verify-db-schema-constraints.js",
+    "db:smoke:cleanup": "node apps/api/scripts/production-smoke-test-cleanup.js"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

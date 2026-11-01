@@ -40,15 +40,16 @@ RUN addgroup --system --gid 1001 chithigroup && \
 # Install curl for healthcheck
 RUN apk add --no-cache curl
 
-# Copy build output, Prisma schema and dependencies
+# Copy build output, Prisma schema, scripts and dependencies
 COPY --from=builder /app/apps/api/dist ./dist
 COPY --from=builder /app/apps/api/prisma ./prisma
+COPY --from=builder /app/apps/api/scripts ./scripts
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=builder /app/apps/api/package.json ./package.json
 
-# Create uploads directory and assign ownership
-RUN mkdir -p /app/uploads && chown -R chithiuser:chithigroup /app
+# Create uploads and backups directory and assign ownership
+RUN mkdir -p /app/uploads /app/backups && chown -R chithiuser:chithigroup /app
 
 USER chithiuser
 

@@ -25,14 +25,14 @@ export default () => ({
   },
   webrtc: {
     turnSecret: process.env.TURN_SECRET || 'chithi_turn_secret_key_2026_dev',
-    turnUrls: process.env.TURN_URLS
-      ? process.env.TURN_URLS.split(',').map((u) => u.trim())
+    turnUrls: (process.env.TURN_URLS || process.env.TURN_SERVER_URL)
+      ? (process.env.TURN_URLS || process.env.TURN_SERVER_URL)!.split(',').map((u) => u.trim())
       : [
           'turn:localhost:3478?transport=udp',
           'turn:localhost:3478?transport=tcp',
         ],
-    stunUrls: process.env.STUN_URLS
-      ? process.env.STUN_URLS.split(',').map((u) => u.trim())
+    stunUrls: (process.env.STUN_URLS || process.env.STUN_SERVERS)
+      ? (process.env.STUN_URLS || process.env.STUN_SERVERS)!.split(',').map((u) => u.trim())
       : [
           'stun:stun.l.google.com:19302',
           'stun:stun1.l.google.com:19302',

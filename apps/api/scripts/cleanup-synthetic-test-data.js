@@ -50,7 +50,7 @@ function validateTargetEnvironment(dbUrl) {
  * Never relies on a hardcoded allowlist or exclusion list.
  */
 const SYNTHETIC_USER_REGEX =
-  '^(alice|bob|cal_a|cal_b|call_a|call_b|call_c|covfix|prof_a|prof_b|media_a|media_b|stranger_c|user_a|user_b|user_c|brand_qa|integration_test|test_user)_[0-9]{8,18}$';
+  '^(alice|bob|cal_a|cal_b|call_a|call_b|call_c|covfix|prof_a|prof_b|media_a|media_b|stranger_c|user_a|user_b|user_c|brand_qa|integration_test|test_user|smoke_a|smoke_b)_[0-9]{8,18}$';
 
 const SYNTHETIC_EMAIL_DOMAINS = [
   '%@example.com',

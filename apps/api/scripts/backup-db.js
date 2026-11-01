@@ -4,7 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://chithi:chithi_secret@localhost:5432/chithi_db';
-const BACKUP_DIR = path.resolve(__dirname, '..', 'backups');
+const BACKUP_DIR = process.env.BACKUP_DIR || path.resolve(__dirname, '..', 'backups');
 
 async function backupDatabase(targetDatabaseUrl) {
   const dbUrl = targetDatabaseUrl || DATABASE_URL;

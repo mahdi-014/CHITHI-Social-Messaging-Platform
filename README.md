@@ -574,10 +574,10 @@ openssl rand -hex 24 # Set as POSTGRES_PASSWORD
 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 
 # 3. Run database migrations inside the API container
-docker compose -f docker-compose.prod.yml exec api pnpm prisma:push
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec api pnpm prisma:push
 
 # 4. Confirm container health
-docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml --env-file .env.prod ps
 ```
 
 ---
@@ -640,14 +640,27 @@ CHITHI includes built-in transactional backup and restoration utilities:
 
 ### Creating a Backup
 ```bash
+# Direct host execution (requires local Node.js and PostgreSQL connectivity)
 node apps/api/scripts/backup-db.js
+
+# Production container execution (writes to persistent database_backups volume)
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec api node scripts/backup-db.js
 ```
 - Creates a timestamped JSON dump containing table metadata, row counts, and data rows under `apps/api/backups/`.
 - Computes and logs a SHA-256 cryptographic checksum for tamper verification.
 
+### Automated Daily Cron Scheduling
+```cron
+0 2 * * * cd /opt/chithi && docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T api node scripts/backup-db.js >> /var/log/chithi-backup.log 2>&1
+```
+
 ### Restoring a Backup
 ```bash
+# Direct host execution
 node apps/api/scripts/restore-db.js apps/api/backups/backup-<timestamp>.json
+
+# Production container execution
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec api node scripts/restore-db.js /app/backups/backup-<timestamp>.json
 ```
 - Verifies the file's SHA-256 checksum before touching the database.
 - Executes within an isolated transaction; automatically rolls back if any foreign key constraint is violated.
@@ -661,7 +674,7 @@ node apps/api/scripts/restore-db.js apps/api/backups/backup-<timestamp>.json
 - **Readiness Probe**: `GET /ready` -> Validates PostgreSQL database connectivity and returns `200 OK`.
 
 ### Troubleshooting Common Issues
-- **`502 Bad Gateway` on Nginx**: Verify that the `api` and `web` containers are healthy (`docker compose -f docker-compose.prod.yml ps`).
+- **`502 Bad Gateway` on Nginx**: Verify that the `api` and `web` containers are healthy (`docker compose -f docker-compose.prod.yml --env-file .env.prod ps`).
 - **WebRTC Calls fail to connect**: Ensure UDP ports `49152-65535` and `3478` are open on the firewall and the `TURN_SECRET` matches the Coturn configuration.
 - **Media Upload rejected with 400**: Check that the file MIME type matches its binary magic bytes and does not exceed category size limits (100 MB for video).
 
