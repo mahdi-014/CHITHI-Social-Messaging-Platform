@@ -13,10 +13,6 @@ import {
   Check,
   CheckCheck,
   Image as ImageIcon,
-  Smile,
-  Circle,
-  MessageSquare,
-  Users,
   Phone,
   Video,
   History,
@@ -24,8 +20,12 @@ import {
   X,
   Loader2,
   Maximize2,
+  MoreVertical,
+  Camera,
+  Film,
+  Smile,
+  User,
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import { useWebRTCCall } from '../../../hooks/useWebRTCCall';
 import CallHistoryModal from '../../../components/calling/CallHistoryModal';
 import UserAvatar from '../../../components/ui/UserAvatar';
@@ -50,6 +50,8 @@ export default function ChatsPage() {
   const { startCall } = useWebRTCCall();
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [inputText, setInputText] = useState('');
@@ -68,6 +70,8 @@ export default function ChatsPage() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSelectMedia = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video') => {
     const file = e.target.files?.[0];
@@ -91,6 +95,7 @@ export default function ChatsPage() {
     setSelectedFile(file);
     setFilePreview(preview);
     setFileType(type);
+    setAttachmentMenuOpen(false);
     e.target.value = '';
   };
 
@@ -102,9 +107,6 @@ export default function ChatsPage() {
     setUploadingMedia(false);
     setUploadProgress(null);
   };
-
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load conversations on mount
   useEffect(() => {
@@ -120,6 +122,9 @@ export default function ChatsPage() {
     if (!activeConversationId) return;
 
     setLoadingMessages(true);
+    setHeaderMenuOpen(false);
+    setAttachmentMenuOpen(false);
+
     const socket = getSocket();
     if (!socket.connected) {
       socket.connect();
@@ -271,28 +276,71 @@ export default function ChatsPage() {
     c.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
+  // Date formatting helpers for WhatsApp-style chat grouping & timestamps
+  const isSameDay = (d1: string, d2?: string) => {
+    if (!d2) return false;
+    const a = new Date(d1);
+    const b = new Date(d2);
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  };
+
+  const formatDateSeparator = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    if (d.toDateString() === today.toDateString()) return 'Today';
+    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      ...(d.getFullYear() !== today.getFullYear() ? { year: 'numeric' } : {}),
+    });
+  };
+
+  const formatConvTime = (dateStr?: string | null) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    const now = new Date();
+    if (d.toDateString() === now.toDateString()) {
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    const yesterday = new Date();
+    yesterday.setDate(now.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    }
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
+
   return (
-    <div className="flex h-full w-full overflow-hidden">
-      {/* Conversation List Panel */}
+    <div className="flex h-full w-full overflow-hidden bg-background">
+      {/* ======================================================== */}
+      {/* 1. WHATSAPP-INSPIRED CONVERSATION LIST PANEL */}
+      {/* ======================================================== */}
       <div
-        className={`w-full md:w-80 lg:w-96 flex flex-col border-r border-border bg-surface ${
+        className={`w-full md:w-80 lg:w-96 flex flex-col border-r border-border bg-surface select-none ${
           activeConversationId ? 'hidden md:flex' : 'flex'
         }`}
       >
-        {/* Header */}
-        <div className="p-4 border-b border-border flex items-center justify-between">
-          <h1 className="text-xl font-bold tracking-tight">Chats</h1>
-          <div className="flex items-center gap-1.5">
+        {/* Top Header */}
+        <div className="p-4 border-b border-border/80 flex items-center justify-between bg-surface/95 backdrop-blur-xs">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Chats</h1>
+          </div>
+          <div className="flex items-center gap-1">
             <button
               onClick={() => setHistoryModalOpen(true)}
-              className="p-2 rounded-xl text-muted hover:text-foreground hover:bg-surface-muted transition-colors"
+              className="p-2 rounded-full text-muted hover:text-foreground hover:bg-surface-muted transition-colors"
               title="Call History"
             >
               <History className="w-5 h-5" />
             </button>
             <button
               onClick={openNewChatModal}
-              className="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
               title="Start new conversation"
             >
               <Plus className="w-5 h-5" />
@@ -300,24 +348,35 @@ export default function ChatsPage() {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="p-3 border-b border-border">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-muted pointer-events-none" />
+        {/* WhatsApp-Style Search Input */}
+        <div className="px-3 py-2.5 border-b border-border/60 bg-surface">
+          <div className="relative flex items-center">
+            <Search className="w-4 h-4 absolute left-3.5 text-muted pointer-events-none" />
             <input
               type="text"
-              placeholder="Search conversations..."
+              placeholder="Search or start new chat"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-background border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full pl-10 pr-8 py-2 rounded-xl bg-surface-muted/60 border border-border/50 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-background transition-all"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 text-muted hover:text-foreground p-0.5"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
         {/* Conversations List */}
-        <div className="flex-1 overflow-y-auto divide-y divide-border/50">
+        <div className="flex-1 overflow-y-auto divide-y divide-border/40">
           {loadingConv ? (
-            <div className="p-6 text-center text-sm text-muted">Loading chats...</div>
+            <div className="p-8 text-center text-xs text-muted flex flex-col items-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              <span>Loading chats...</span>
+            </div>
           ) : filteredConversations.length === 0 ? (
             <div className="p-8 text-center flex flex-col items-center justify-center gap-3">
               <img
@@ -325,9 +384,9 @@ export default function ChatsPage() {
                 alt="CHITHI"
                 className="w-12 h-12 rounded-2xl shadow-sm mb-1 object-contain"
               />
-              <p className="text-sm font-medium">No conversations yet</p>
-              <p className="text-xs text-muted max-w-xs">
-                Start a direct chat with one of your accepted friends.
+              <p className="text-sm font-semibold text-foreground">No conversations yet</p>
+              <p className="text-xs text-muted max-w-xs leading-relaxed">
+                Connect and exchange messages with your accepted friends on CHITHI.
               </p>
               <button
                 onClick={openNewChatModal}
@@ -340,12 +399,17 @@ export default function ChatsPage() {
             filteredConversations.map((conv) => {
               const isActive = conv.id === activeConversationId;
               const isOnline = conv.otherParticipant ? onlineUsers.has(conv.otherParticipant.id) : false;
+              const isTyping = typingUsers[conv.id] && typingUsers[conv.id].size > 0;
+              const lastMsgIsMine = conv.lastMessage?.senderId === user?.id;
+
               return (
                 <button
                   key={conv.id}
                   onClick={() => setActiveConversationId(conv.id)}
-                  className={`w-full p-3.5 flex items-start gap-3.5 text-left transition-colors rounded-2xl ${
-                    isActive ? 'bg-primary/10' : 'hover:bg-surface-muted/60'
+                  className={`w-full px-3.5 py-3 flex items-center gap-3 text-left transition-colors relative ${
+                    isActive
+                      ? 'bg-primary/10 border-l-4 border-primary'
+                      : 'hover:bg-surface-muted/60 border-l-4 border-transparent'
                   }`}
                 >
                   <UserAvatar
@@ -357,20 +421,33 @@ export default function ChatsPage() {
                   />
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-sm truncate">{conv.title}</span>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="font-semibold text-sm truncate text-foreground">{conv.title}</span>
                       {conv.lastMessageAt && (
-                        <span className="text-[11px] text-muted flex-shrink-0">
-                          {formatDistanceToNow(new Date(conv.lastMessageAt), { addSuffix: false })}
+                        <span className={`text-[11px] flex-shrink-0 font-medium ${conv.unreadCount > 0 ? 'text-primary' : 'text-muted'}`}>
+                          {formatConvTime(conv.lastMessageAt)}
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-muted truncate pr-2">
-                        {conv.lastMessage?.body || 'No messages yet'}
-                      </p>
+
+                    <div className="flex items-center justify-between gap-2">
+                      {isTyping ? (
+                        <p className="text-xs text-primary font-medium flex items-center gap-1 truncate animate-pulse">
+                          typing...
+                        </p>
+                      ) : (
+                        <div className="flex items-center gap-1 min-w-0 text-xs text-muted truncate">
+                          {lastMsgIsMine && (
+                            <CheckCheck className="w-3.5 h-3.5 text-muted flex-shrink-0" />
+                          )}
+                          <span className="truncate">
+                            {conv.lastMessage?.body || 'No messages yet'}
+                          </span>
+                        </div>
+                      )}
+
                       {conv.unreadCount > 0 && (
-                        <span className="px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex-shrink-0">
+                        <span className="px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold min-w-[18px] text-center flex-shrink-0">
                           {conv.unreadCount}
                         </span>
                       )}
@@ -383,20 +460,22 @@ export default function ChatsPage() {
         </div>
       </div>
 
-      {/* Active Conversation Panel */}
+      {/* ======================================================== */}
+      {/* 2. ACTIVE CONVERSATION PANEL */}
+      {/* ======================================================== */}
       <div
-        className={`flex-1 flex flex-col bg-background ${
+        className={`flex-1 flex flex-col bg-background relative overflow-hidden ${
           !activeConversationId ? 'hidden md:flex' : 'flex'
         }`}
       >
         {activeConv ? (
           <>
-            {/* Chat Header */}
-            <div className="h-16 border-b border-border bg-surface px-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            {/* WhatsApp-Style Chat Header */}
+            <div className="h-16 border-b border-border/80 bg-surface/95 backdrop-blur-xs px-4 flex items-center justify-between z-10 shadow-xs">
+              <div className="flex items-center gap-3 min-w-0">
                 <button
                   onClick={() => setActiveConversationId(null)}
-                  className="md:hidden p-2 rounded-lg hover:bg-surface-muted text-muted"
+                  className="md:hidden p-2 -ml-2 rounded-full hover:bg-surface-muted text-muted hover:text-foreground transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
@@ -407,7 +486,7 @@ export default function ChatsPage() {
                       setProfileModalUserId(activeConv.otherParticipant.id);
                     }
                   }}
-                  className="flex items-center gap-3 hover:opacity-85 transition-opacity text-left cursor-pointer"
+                  className="flex items-center gap-3 hover:opacity-90 transition-opacity text-left cursor-pointer min-w-0"
                   title="View user profile"
                 >
                   <UserAvatar
@@ -418,162 +497,241 @@ export default function ChatsPage() {
                     isOnline={activeConv.otherParticipant ? onlineUsers.has(activeConv.otherParticipant.id) : false}
                   />
 
-                  <div>
-                    <h2 className="font-bold text-sm leading-tight hover:underline flex items-center gap-1.5">
+                  <div className="min-w-0">
+                    <h2 className="font-bold text-sm leading-tight text-foreground truncate hover:underline flex items-center gap-1.5">
                       <span>{activeConv.title}</span>
                     </h2>
-                    <p className="text-xs text-muted">
-                      {activeConv.otherParticipant && onlineUsers.has(activeConv.otherParticipant.id)
-                        ? 'Active Now'
-                        : activeConv.otherParticipant
-                        ? `@${activeConv.otherParticipant.username}`
-                        : 'Direct Chat'}
+                    <p className="text-[11px] text-muted truncate">
+                      {currentTyping.length > 0 ? (
+                        <span className="text-primary font-medium">typing...</span>
+                      ) : activeConv.otherParticipant && onlineUsers.has(activeConv.otherParticipant.id) ? (
+                        <span className="text-emerald-500 font-medium">Active now</span>
+                      ) : activeConv.otherParticipant ? (
+                        `@${activeConv.otherParticipant.username}`
+                      ) : (
+                        'Direct Chat'
+                      )}
                     </p>
                   </div>
                 </button>
               </div>
 
-              {/* Calling Action Buttons */}
-              {activeConv.otherParticipant && (
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() =>
-                      startCall(activeConv.id, 'audio', {
-                        id: activeConv.otherParticipant!.id,
-                        username: activeConv.otherParticipant!.username,
-                        displayName: activeConv.otherParticipant!.displayName,
-                        avatarMediaId: activeConv.otherParticipant!.avatarMediaId,
-                      })
-                    }
-                    title="Start Voice Call"
-                    className="p-2.5 rounded-xl text-foreground/80 hover:text-primary hover:bg-primary/10 transition-colors"
-                  >
-                    <Phone className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() =>
-                      startCall(activeConv.id, 'video', {
-                        id: activeConv.otherParticipant!.id,
-                        username: activeConv.otherParticipant!.username,
-                        displayName: activeConv.otherParticipant!.displayName,
-                        avatarMediaId: activeConv.otherParticipant!.avatarMediaId,
-                      })
-                    }
-                    title="Start Video Call"
-                    className="p-2.5 rounded-xl text-foreground/80 hover:text-primary hover:bg-primary/10 transition-colors"
-                  >
-                    <Video className="w-5 h-5" />
-                  </button>
-                </div>
-              )}
+              {/* WhatsApp Action Controls (Calling & Options) */}
+              <div className="flex items-center gap-1 relative">
+                {activeConv.otherParticipant && (
+                  <>
+                    <button
+                      onClick={() =>
+                        startCall(activeConv.id, 'audio', {
+                          id: activeConv.otherParticipant!.id,
+                          username: activeConv.otherParticipant!.username,
+                          displayName: activeConv.otherParticipant!.displayName,
+                          avatarMediaId: activeConv.otherParticipant!.avatarMediaId,
+                        })
+                      }
+                      title="Start Voice Call"
+                      className="p-2.5 rounded-full text-foreground/80 hover:text-primary hover:bg-surface-muted transition-colors"
+                    >
+                      <Phone className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() =>
+                        startCall(activeConv.id, 'video', {
+                          id: activeConv.otherParticipant!.id,
+                          username: activeConv.otherParticipant!.username,
+                          displayName: activeConv.otherParticipant!.displayName,
+                          avatarMediaId: activeConv.otherParticipant!.avatarMediaId,
+                        })
+                      }
+                      title="Start Video Call"
+                      className="p-2.5 rounded-full text-foreground/80 hover:text-primary hover:bg-surface-muted transition-colors"
+                    >
+                      <Video className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
+
+                <button
+                  onClick={() => setHeaderMenuOpen(!headerMenuOpen)}
+                  className="p-2 rounded-full text-muted hover:text-foreground hover:bg-surface-muted transition-colors"
+                  title="More options"
+                >
+                  <MoreVertical className="w-5 h-5" />
+                </button>
+
+                {/* Dropdown Menu */}
+                {headerMenuOpen && (
+                  <div className="absolute right-0 top-12 w-48 bg-surface border border-border rounded-xl shadow-xl py-1 z-30 animate-in fade-in zoom-in-95">
+                    <button
+                      onClick={() => {
+                        setHeaderMenuOpen(false);
+                        if (activeConv.otherParticipant?.id) {
+                          setProfileModalUserId(activeConv.otherParticipant.id);
+                        }
+                      }}
+                      className="w-full px-4 py-2 text-xs text-left hover:bg-surface-muted flex items-center gap-2.5 text-foreground"
+                    >
+                      <User className="w-4 h-4 text-muted" />
+                      <span>View Profile</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setHeaderMenuOpen(false);
+                        setHistoryModalOpen(true);
+                      }}
+                      className="w-full px-4 py-2 text-xs text-left hover:bg-surface-muted flex items-center gap-2.5 text-foreground"
+                    >
+                      <History className="w-4 h-4 text-muted" />
+                      <span>Call History</span>
+                    </button>
+                    <div className="my-1 border-t border-border" />
+                    <button
+                      onClick={() => {
+                        setHeaderMenuOpen(false);
+                        setActiveConversationId(null);
+                      }}
+                      className="w-full px-4 py-2 text-xs text-left text-muted hover:bg-surface-muted flex items-center gap-2.5"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>Close Chat</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Messages Scroll Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {/* WhatsApp-Style Chat Background and Message Flow */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2 relative bg-surface-muted/20 dark:bg-background/95">
               {loadingMessages ? (
-                <div className="p-8 text-center text-sm text-muted">Loading messages...</div>
+                <div className="p-8 text-center text-xs text-muted flex flex-col items-center justify-center gap-2 h-full">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  <span>Loading conversation history...</span>
+                </div>
               ) : currentMessages.length === 0 ? (
-                <div className="p-8 text-center text-sm text-muted">
-                  No messages yet. Send a greeting to start chatting!
+                <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-3">
+                    <Send className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">No messages yet</p>
+                  <p className="text-xs text-muted mt-1 max-w-xs">
+                    Send a message or share a photo to begin chatting with {activeConv.title}.
+                  </p>
                 </div>
               ) : (
-                currentMessages.map((msg) => {
+                currentMessages.map((msg, index) => {
                   const isMine = msg.senderId === user?.id;
                   const isRead = msg.receipts?.some((r) => r.readAt);
                   const isDelivered = msg.receipts?.some((r) => r.deliveredAt);
                   const attachments = msg.attachments || [];
+                  const showDateSeparator =
+                    index === 0 || !isSameDay(msg.createdAt, currentMessages[index - 1].createdAt);
 
                   return (
-                    <div
-                      key={msg.id}
-                      className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}
-                    >
-                      <div
-                        className={`max-w-[85%] sm:max-w-[70%] p-2.5 rounded-2xl text-sm shadow-sm ${
-                          isMine
-                            ? 'bg-primary text-primary-foreground rounded-br-xs'
-                            : 'bg-surface border border-border text-foreground rounded-bl-xs'
-                        }`}
-                      >
-                        {/* Attachments rendering */}
-                        {attachments.map((att: any) => {
-                          const mediaId = att.mediaAssetId || att.mediaAsset?.id;
-                          const mime = att.mediaAsset?.mimeType || '';
-                          const isVid = mime.startsWith('video/') || msg.messageType === 'video';
-                          const mediaUrl = getMediaUrl(mediaId);
+                    <React.Fragment key={msg.id}>
+                      {/* WhatsApp-Style Date Separator Badge */}
+                      {showDateSeparator && (
+                        <div className="flex justify-center my-3 select-none">
+                          <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-surface/90 border border-border/70 text-muted shadow-xs backdrop-blur-xs">
+                            {formatDateSeparator(msg.createdAt)}
+                          </span>
+                        </div>
+                      )}
 
-                          if (isVid) {
-                            return (
-                              <div key={att.id || mediaId} className="mb-2 rounded-xl overflow-hidden bg-black/90">
-                                <video
-                                  src={mediaUrl}
-                                  controls
-                                  playsInline
-                                  preload="metadata"
-                                  className="w-full max-h-72 object-contain rounded-xl"
-                                />
-                              </div>
-                            );
-                          }
-
-                          return (
-                            <div
-                              key={att.id || mediaId}
-                              className="mb-2 rounded-xl overflow-hidden cursor-pointer relative group bg-black/10"
-                              onClick={() => setLightboxMedia({ url: mediaUrl, type: 'image' })}
-                            >
-                              <img
-                                src={mediaUrl}
-                                alt="Attachment"
-                                crossOrigin="anonymous"
-                                className="w-full max-h-72 object-cover rounded-xl transition-transform hover:scale-101"
-                                loading="lazy"
-                              />
-                              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
-                                <span className="p-2 rounded-full bg-black/60 text-white backdrop-blur-xs">
-                                  <Maximize2 className="w-4 h-4" />
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })}
-
-                        {/* Text body if present */}
-                        {msg.body && (
-                          <p className="px-1.5 py-0.5 whitespace-pre-wrap break-words">{msg.body}</p>
-                        )}
-
+                      {/* WhatsApp Message Bubble */}
+                      <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} group mb-1`}>
                         <div
-                          className={`flex items-center justify-end gap-1 text-[10px] mt-1 px-1.5 ${
-                            isMine ? 'text-primary-foreground/75' : 'text-muted'
+                          className={`max-w-[85%] sm:max-w-[70%] p-2.5 rounded-2xl text-sm shadow-xs transition-shadow relative ${
+                            isMine
+                              ? 'bg-primary text-primary-foreground rounded-br-xs'
+                              : 'bg-surface border border-border/80 text-foreground rounded-bl-xs'
                           }`}
                         >
-                          <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                          {isMine && (
-                            <span>
-                              {isRead ? (
-                                <CheckCheck className="w-3.5 h-3.5 text-blue-300" />
-                              ) : isDelivered ? (
-                                <CheckCheck className="w-3.5 h-3.5" />
-                              ) : (
-                                <Check className="w-3.5 h-3.5" />
-                              )}
-                            </span>
+                          {/* Attachments rendering */}
+                          {attachments.map((att: any) => {
+                            const mediaId = att.mediaAssetId || att.mediaAsset?.id;
+                            const mime = att.mediaAsset?.mimeType || '';
+                            const isVid = mime.startsWith('video/') || msg.messageType === 'video';
+                            const mediaUrl = getMediaUrl(mediaId);
+
+                            if (isVid) {
+                              return (
+                                <div key={att.id || mediaId} className="mb-2 rounded-xl overflow-hidden bg-black/90 shadow-xs">
+                                  <video
+                                    src={mediaUrl}
+                                    controls
+                                    playsInline
+                                    preload="metadata"
+                                    className="w-full max-h-72 object-contain rounded-xl"
+                                  />
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div
+                                key={att.id || mediaId}
+                                className="mb-2 rounded-xl overflow-hidden cursor-pointer relative group/img bg-black/10"
+                                onClick={() => setLightboxMedia({ url: mediaUrl, type: 'image' })}
+                              >
+                                <img
+                                  src={mediaUrl}
+                                  alt="Attachment"
+                                  crossOrigin="anonymous"
+                                  className="w-full max-h-72 object-cover rounded-xl transition-transform duration-200 group-hover/img:scale-101"
+                                  loading="lazy"
+                                />
+                                <div className="absolute inset-0 bg-black/25 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
+                                  <span className="p-2 rounded-full bg-black/60 text-white backdrop-blur-xs">
+                                    <Maximize2 className="w-4 h-4" />
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                          {/* Text body if present */}
+                          {msg.body && (
+                            <p className="px-1.5 py-0.5 whitespace-pre-wrap break-words leading-relaxed text-sm">
+                              {msg.body}
+                            </p>
                           )}
+
+                          {/* WhatsApp Micro-Layout: Timestamp & Status Ticks */}
+                          <div
+                            className={`flex items-center justify-end gap-1 text-[10px] mt-1 px-1 select-none font-medium ${
+                              isMine ? 'text-primary-foreground/80' : 'text-muted'
+                            }`}
+                          >
+                            <span>
+                              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            {isMine && (
+                              <span className="inline-flex items-center">
+                                {isRead ? (
+                                  <CheckCheck className="w-3.5 h-3.5 text-sky-300" />
+                                ) : isDelivered ? (
+                                  <CheckCheck className="w-3.5 h-3.5" />
+                                ) : (
+                                  <Check className="w-3.5 h-3.5" />
+                                )}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </React.Fragment>
                   );
                 })
               )}
+
+              {/* WhatsApp-Style Typing Indicator Bubble */}
               {currentTyping.length > 0 && (
-                <div className="flex items-center gap-2 text-xs text-muted italic">
-                  <div className="flex gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-muted animate-bounce" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-muted animate-bounce delay-100" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-muted animate-bounce delay-200" />
+                <div className="flex items-center gap-2 mb-2 animate-in fade-in">
+                  <div className="px-4 py-2.5 rounded-2xl rounded-bl-xs bg-surface border border-border/80 shadow-xs flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-primary animate-bounce" />
+                    <span className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:150ms]" />
+                    <span className="w-2 h-2 rounded-full bg-primary animate-bounce [animation-delay:300ms]" />
                   </div>
-                  <span>{currentTyping[0]} is typing...</span>
                 </div>
               )}
               <div ref={messagesEndRef} />
@@ -618,7 +776,7 @@ export default function ChatsPage() {
               </div>
             )}
 
-            {/* Hidden file pickers */}
+            {/* Hidden file pickers with mandatory testids */}
             <input
               type="file"
               ref={fileInputRef}
@@ -636,67 +794,118 @@ export default function ChatsPage() {
               className="hidden"
             />
 
-            {/* Message Composer */}
-            <form onSubmit={handleSendMessage} className="p-3 border-t border-border bg-surface flex items-center gap-2">
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadingMedia}
-                  title="Attach Photo"
-                  className="p-2 rounded-xl text-muted hover:text-primary hover:bg-surface-muted transition-colors disabled:opacity-40"
-                >
-                  <ImageIcon className="w-5 h-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => videoInputRef.current?.click()}
-                  disabled={uploadingMedia}
-                  title="Attach Video"
-                  className="p-2 rounded-xl text-muted hover:text-primary hover:bg-surface-muted transition-colors disabled:opacity-40"
-                >
-                  <Video className="w-5 h-5" />
-                </button>
-              </div>
+            {/* WhatsApp-Style Message Composer */}
+            <div className="p-3 border-t border-border/80 bg-surface/95 backdrop-blur-xs relative">
+              {/* Attachment Popover Menu */}
+              {attachmentMenuOpen && (
+                <div className="absolute left-4 bottom-16 bg-surface border border-border rounded-2xl shadow-2xl p-2 z-20 flex flex-col gap-1 w-48 animate-in fade-in slide-in-from-bottom-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAttachmentMenuOpen(false);
+                      fileInputRef.current?.click();
+                    }}
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-surface-muted text-foreground transition-colors text-xs font-medium text-left"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center">
+                      <Camera className="w-4 h-4" />
+                    </div>
+                    <span>Photo or Image</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAttachmentMenuOpen(false);
+                      videoInputRef.current?.click();
+                    }}
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-surface-muted text-foreground transition-colors text-xs font-medium text-left"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                      <Film className="w-4 h-4" />
+                    </div>
+                    <span>Video Clip</span>
+                  </button>
+                </div>
+              )}
 
-              <input
-                type="text"
-                placeholder={selectedFile ? 'Add a caption (optional)...' : 'Type a message...'}
-                value={inputText}
-                onChange={handleInputChange}
-                disabled={uploadingMedia}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-background border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
-              />
-              <button
-                type="submit"
-                disabled={uploadingMedia || (!inputText.trim() && !selectedFile)}
-                className="p-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover transition-colors disabled:opacity-40 flex items-center justify-center"
-              >
-                {uploadingMedia ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-              </button>
-            </form>
+              <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setAttachmentMenuOpen(!attachmentMenuOpen)}
+                    disabled={uploadingMedia}
+                    title="Attach Media"
+                    className={`p-2.5 rounded-full transition-colors ${
+                      attachmentMenuOpen
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted hover:text-foreground hover:bg-surface-muted'
+                    }`}
+                  >
+                    <Paperclip className="w-5 h-5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingMedia}
+                    title="Attach Photo"
+                    className="p-2 rounded-full text-muted hover:text-primary hover:bg-surface-muted transition-colors disabled:opacity-40"
+                  >
+                    <ImageIcon className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => videoInputRef.current?.click()}
+                    disabled={uploadingMedia}
+                    title="Attach Video"
+                    className="p-2 rounded-full text-muted hover:text-primary hover:bg-surface-muted transition-colors disabled:opacity-40"
+                  >
+                    <Video className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <input
+                  type="text"
+                  placeholder={selectedFile ? 'Add a caption (optional)...' : 'Type a message...'}
+                  value={inputText}
+                  onChange={handleInputChange}
+                  disabled={uploadingMedia}
+                  className="flex-1 px-4 py-2.5 rounded-full bg-surface-muted/60 border border-border/60 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-background transition-all disabled:opacity-50"
+                />
+
+                <button
+                  type="submit"
+                  disabled={uploadingMedia || (!inputText.trim() && !selectedFile)}
+                  className="p-2.5 rounded-full bg-primary text-primary-foreground hover:bg-primary-hover transition-colors disabled:opacity-40 flex items-center justify-center shadow-sm"
+                >
+                  {uploadingMedia ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                </button>
+              </form>
+            </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center select-none">
             <img
               src="/brand/logo/logo-symbol.svg"
               alt="CHITHI"
               className="w-16 h-16 rounded-2xl shadow-md shadow-primary/20 mb-4 object-contain"
             />
-            <h2 className="text-xl font-bold tracking-tight mb-1">Select a conversation</h2>
-            <p className="text-sm text-muted max-w-sm">
+            <h2 className="text-xl font-bold tracking-tight text-foreground mb-1">Select a conversation</h2>
+            <p className="text-xs text-muted max-w-sm leading-relaxed">
               Choose an active chat from the sidebar or start a new conversation with an accepted friend.
             </p>
           </div>
         )}
       </div>
 
-      {/* New Conversation Friends Modal */}
+      {/* ======================================================== */}
+      {/* 3. MODALS & LIGHTBOX */}
+      {/* ======================================================== */}
       {friendsModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="w-full max-w-md bg-surface border border-border rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[80vh]">
             <div className="p-4 border-b border-border flex items-center justify-between">
-              <h3 className="font-bold text-base">New Conversation</h3>
+              <h3 className="font-bold text-base text-foreground">New Conversation</h3>
               <button
                 onClick={() => setFriendsModalOpen(false)}
                 className="text-muted hover:text-foreground text-sm font-medium"
@@ -721,7 +930,7 @@ export default function ChatsPage() {
                       {f.displayName ? f.displayName[0].toUpperCase() : 'U'}
                     </div>
                     <div>
-                      <h4 className="font-semibold text-sm">{f.displayName}</h4>
+                      <h4 className="font-semibold text-sm text-foreground">{f.displayName}</h4>
                       <p className="text-xs text-muted">@{f.username}</p>
                     </div>
                   </button>

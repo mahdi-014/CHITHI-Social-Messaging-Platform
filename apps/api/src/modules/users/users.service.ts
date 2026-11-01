@@ -108,6 +108,7 @@ export class UsersService {
       displayName: targetUser.profile?.displayName || targetUser.username,
       bio: friendshipStatus === 'friends' ? targetUser.profile?.bio : undefined,
       avatarMediaId: targetUser.profile?.avatarMediaId,
+      coverMediaId: targetUser.profile?.coverMediaId,
       friendshipStatus,
     };
   }

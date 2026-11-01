@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, Param, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, Body, Param, ParseUUIDPipe, HttpCode, HttpStatus } from '@nestjs/common';
 import { ProfilesService } from './profiles.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CurrentUser, CurrentUserPayload } from '../../common/decorators/current-user.decorator';
@@ -13,6 +13,18 @@ export class ProfilesController {
     @Body() dto: UpdateProfileDto,
   ) {
     return this.profilesService.updateProfile(user.userId, dto);
+  }
+
+  @Delete('me/avatar')
+  @HttpCode(HttpStatus.OK)
+  async removeAvatar(@CurrentUser() user: CurrentUserPayload) {
+    return this.profilesService.updateProfile(user.userId, { avatarMediaId: null });
+  }
+
+  @Delete('me/cover')
+  @HttpCode(HttpStatus.OK)
+  async removeCover(@CurrentUser() user: CurrentUserPayload) {
+    return this.profilesService.updateProfile(user.userId, { coverMediaId: null });
   }
 
   @Get(':userId')

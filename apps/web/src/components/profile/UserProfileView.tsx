@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiFetch } from '../../lib/api';
+import { apiFetch, getMediaUrl } from '../../lib/api';
 import { useAuthStore } from '../../stores/auth.store';
 import { useChatStore } from '../../stores/chat.store';
 import { useWebRTCCall } from '../../hooks/useWebRTCCall';
@@ -59,6 +59,11 @@ export default function UserProfileView({
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [coverError, setCoverError] = useState(false);
+
+  useEffect(() => {
+    setCoverError(false);
+  }, [profile?.coverMediaId]);
+
 
   const fetchProfileData = useCallback(async () => {
     setLoading(true);
@@ -297,7 +302,8 @@ export default function UserProfileView({
 
   const isSelf = profile.isSelf || profile.userId === currentUser?.id;
   const isFriends = profile.isFriend || relationshipStatus === 'friends';
-  const coverUrl = profile.coverMediaId ? `${API_URL}/media/${profile.coverMediaId}/file` : null;
+  const coverUrl = profile.coverMediaId ? getMediaUrl(profile.coverMediaId) : null;
+
 
   return (
     <div className={`w-full flex flex-col ${isModal ? 'max-h-[85vh] overflow-y-auto' : ''}`}>

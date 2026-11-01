@@ -131,3 +131,27 @@ The media controller supports RFC 7233 partial content requests for video seekin
 - **Endpoint**: `GET /api/v1/media/:id/file?token=<optional-jwt>`
 - **Auth**: Bearer JWT, Cookie, or `?token=` query param
 - **Response**: `200 OK` or `206 Partial Content` with binary stream
+
+### 5. Remove Profile Avatar
+- **Endpoint**: `DELETE /api/v1/profiles/me/avatar`
+- **Auth**: Bearer JWT
+- **Response**: `200 OK`
+  ```json
+  {
+    "success": true,
+    "avatarMediaId": null
+  }
+  ```
+
+### 6. Remove Profile Cover Banner
+- **Endpoint**: `DELETE /api/v1/profiles/me/cover`
+- **Auth**: Bearer JWT
+- **Response**: `200 OK`
+  ```json
+  {
+    "success": true,
+    "coverMediaId": null
+  }
+  ```
+
+

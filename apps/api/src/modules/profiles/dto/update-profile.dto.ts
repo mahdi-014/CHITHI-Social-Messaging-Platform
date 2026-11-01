@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MaxLength, IsUUID } from 'class-validator';
+import { IsString, IsOptional, MaxLength, IsUUID, ValidateIf } from 'class-validator';
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -12,10 +12,12 @@ export class UpdateProfileDto {
   bio?: string;
 
   @IsOptional()
+  @ValidateIf((_, val) => val !== null && val !== undefined)
   @IsUUID()
-  avatarMediaId?: string;
+  avatarMediaId?: string | null;
 
   @IsOptional()
+  @ValidateIf((_, val) => val !== null && val !== undefined)
   @IsUUID()
-  coverMediaId?: string;
+  coverMediaId?: string | null;
 }

@@ -3,9 +3,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { apiFetch, uploadMediaFile } from '../../../lib/api';
+import { apiFetch, uploadMediaFile, getMediaUrl } from '../../../lib/api';
 import { useAuthStore } from '../../../stores/auth.store';
 import UserAvatar from '../../../components/ui/UserAvatar';
+import ImageCropperModal from '../../../components/ui/ImageCropperModal';
 import {
   Camera,
   Edit3,
@@ -21,6 +22,11 @@ import {
   X,
   MessageSquare,
   Sparkles,
+  Eye,
+  Crop,
+  Trash2,
+  MoreVertical,
+  Maximize2,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -46,6 +52,27 @@ export default function MyProfilePage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [coverError, setCoverError] = useState(false);
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
+  const [coverMenuOpen, setCoverMenuOpen] = useState(false);
+
+  // Cropper & Lightbox State
+  const [cropperState, setCropperState] = useState<{
+    isOpen: boolean;
+    imageSrc: string;
+    cropShape: 'circle' | 'rect';
+    aspectRatio: number;
+    title: string;
+    type: 'avatar' | 'cover';
+  }>({
+    isOpen: false,
+    imageSrc: '',
+    cropShape: 'circle',
+    aspectRatio: 1,
+    title: '',
+    type: 'avatar',
+  });
+  const [lightboxMedia, setLightboxMedia] = useState<{ url: string; title: string } | null>(null);
+
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -74,6 +101,11 @@ export default function MyProfilePage() {
   useEffect(() => {
     loadProfile();
   }, [user]);
+
+  // Reset cover error when coverMediaId changes
+  useEffect(() => {
+    setCoverError(false);
+  }, [profileData?.coverMediaId, coverPreview, user?.coverMediaId]);
 
   // Load user's moments
   useEffect(() => {
@@ -132,18 +164,18 @@ export default function MyProfilePage() {
     }
   };
 
-  // Direct Avatar Upload
+  // Avatar Selection -> direct upload with preview
   const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Show immediate preview
+    setAvatarMenuOpen(false);
     const previewUrl = URL.createObjectURL(file);
     setAvatarPreview(previewUrl);
     setUploadingAvatar(true);
     try {
       const media = await uploadMediaFile(file, 'avatar');
-      const updated = await apiFetch<any>('/profiles/me', {
+      await apiFetch<any>('/profiles/me', {
         method: 'PATCH',
         body: { avatarMediaId: media.id },
       });
@@ -158,22 +190,23 @@ export default function MyProfilePage() {
       setAvatarPreview(null);
     } finally {
       setUploadingAvatar(false);
+      e.target.value = '';
     }
   };
 
-  // Direct Cover Upload
+  // Cover Selection -> direct upload with preview
   const handleCoverFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Show immediate preview
+    setCoverMenuOpen(false);
     const previewUrl = URL.createObjectURL(file);
     setCoverPreview(previewUrl);
     setCoverError(false);
     setUploadingCover(true);
     try {
       const media = await uploadMediaFile(file, 'cover');
-      const updated = await apiFetch<any>('/profiles/me', {
+      await apiFetch<any>('/profiles/me', {
         method: 'PATCH',
         body: { coverMediaId: media.id },
       });
@@ -184,8 +217,100 @@ export default function MyProfilePage() {
         coverMediaId: media.id,
       }));
     } catch (err: any) {
-      alert(`Cover upload failed: ${err.message || 'Error uploading image'}`);
+      alert(`Cover upload failed: ${err.message || 'Error uploading cover'}`);
       setCoverPreview(null);
+    } finally {
+      setUploadingCover(false);
+      e.target.value = '';
+    }
+  };
+
+  // Upload cropped file
+  const handleCropComplete = async (croppedFile: File) => {
+    if (cropperState.type === 'avatar') {
+      const previewUrl = URL.createObjectURL(croppedFile);
+      setAvatarPreview(previewUrl);
+      setUploadingAvatar(true);
+      try {
+        const media = await uploadMediaFile(croppedFile, 'avatar');
+        await apiFetch<any>('/profiles/me', {
+          method: 'PATCH',
+          body: { avatarMediaId: media.id },
+        });
+
+        updateUser({ avatarMediaId: media.id });
+        setProfileData((prev: any) => ({
+          ...prev,
+          avatarMediaId: media.id,
+        }));
+      } catch (err: any) {
+        alert(`Avatar upload failed: ${err.message || 'Error uploading image'}`);
+        setAvatarPreview(null);
+      } finally {
+        setUploadingAvatar(false);
+      }
+    } else {
+      const previewUrl = URL.createObjectURL(croppedFile);
+      setCoverPreview(previewUrl);
+      setCoverError(false);
+      setUploadingCover(true);
+      try {
+        const media = await uploadMediaFile(croppedFile, 'cover');
+        await apiFetch<any>('/profiles/me', {
+          method: 'PATCH',
+          body: { coverMediaId: media.id },
+        });
+
+        updateUser({ coverMediaId: media.id });
+        setProfileData((prev: any) => ({
+          ...prev,
+          coverMediaId: media.id,
+        }));
+      } catch (err: any) {
+        alert(`Cover upload failed: ${err.message || 'Error uploading image'}`);
+        setCoverPreview(null);
+      } finally {
+        setUploadingCover(false);
+      }
+    }
+  };
+
+  // Remove Avatar
+  const handleRemoveAvatar = async () => {
+    if (!confirm('Are you sure you want to remove your profile picture?')) return;
+    setUploadingAvatar(true);
+    setAvatarMenuOpen(false);
+    try {
+      await apiFetch('/profiles/me/avatar', { method: 'DELETE' });
+      updateUser({ avatarMediaId: undefined });
+      setProfileData((prev: any) => ({
+        ...prev,
+        avatarMediaId: null,
+      }));
+      setAvatarPreview(null);
+    } catch (err: any) {
+      alert(`Failed to remove avatar: ${err.message || 'Error'}`);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  // Remove Cover
+  const handleRemoveCover = async () => {
+    if (!confirm('Are you sure you want to remove your cover photo?')) return;
+    setUploadingCover(true);
+    setCoverMenuOpen(false);
+    try {
+      await apiFetch('/profiles/me/cover', { method: 'DELETE' });
+      updateUser({ coverMediaId: undefined });
+      setProfileData((prev: any) => ({
+        ...prev,
+        coverMediaId: null,
+      }));
+      setCoverPreview(null);
+      setCoverError(false);
+    } catch (err: any) {
+      alert(`Failed to remove cover photo: ${err.message || 'Error'}`);
     } finally {
       setUploadingCover(false);
     }
@@ -200,8 +325,12 @@ export default function MyProfilePage() {
     );
   }
 
-  const coverUrl = profileData?.coverMediaId ? `${API_URL}/media/${profileData.coverMediaId}/file` : null;
+  const rawCoverMediaId = profileData?.coverMediaId || user?.coverMediaId;
+  const coverUrl = rawCoverMediaId ? getMediaUrl(rawCoverMediaId) : null;
   const activeCover = coverPreview || (coverUrl && !coverError ? coverUrl : null);
+
+  const rawAvatarMediaId = profileData?.avatarMediaId || user?.avatarMediaId;
+  const avatarUrl = rawAvatarMediaId ? getMediaUrl(rawAvatarMediaId) : null;
 
   return (
     <div className="flex-1 overflow-y-auto bg-background">
@@ -215,7 +344,8 @@ export default function MyProfilePage() {
                 src={activeCover}
                 alt="Cover"
                 crossOrigin="anonymous"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover cursor-pointer"
+                onClick={() => setLightboxMedia({ url: activeCover, title: 'Cover Photo' })}
                 onError={() => setCoverError(true)}
               />
             ) : (
@@ -224,7 +354,7 @@ export default function MyProfilePage() {
               </div>
             )}
 
-            {/* Change Cover Button Overlay */}
+            {/* Hidden File Input for Cover */}
             <input
               type="file"
               ref={coverInputRef}
@@ -233,24 +363,92 @@ export default function MyProfilePage() {
               data-testid="cover-file-input"
               className="hidden"
             />
-            <button
-              onClick={() => coverInputRef.current?.click()}
-              disabled={uploadingCover}
-              className="absolute bottom-4 right-4 px-3.5 py-2 rounded-2xl bg-black/60 hover:bg-black/80 text-white backdrop-blur-md text-xs font-semibold flex items-center gap-2 transition-all shadow-lg active:scale-95"
-            >
-              {uploadingCover ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Camera className="w-4 h-4" />
+
+            {/* Cover Management Controls */}
+            <div className="absolute bottom-4 right-4 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCoverMenuOpen((o) => !o)}
+                disabled={uploadingCover}
+                className="px-3.5 py-2 rounded-2xl bg-black/60 hover:bg-black/80 text-white backdrop-blur-md text-xs font-semibold flex items-center gap-2 transition-all shadow-lg active:scale-95 border border-white/10"
+              >
+                {uploadingCover ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Camera className="w-4 h-4" />
+                )}
+                <span>Change Cover Photo</span>
+              </button>
+
+              {/* Cover Dropdown Menu */}
+              {coverMenuOpen && (
+                <div className="absolute right-0 bottom-12 w-52 bg-surface/95 backdrop-blur-md border border-border rounded-2xl shadow-2xl p-1.5 z-30 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      coverInputRef.current?.click();
+                      setCoverMenuOpen(false);
+                    }}
+                    className="w-full px-3 py-2 text-left text-xs font-medium rounded-xl hover:bg-surface-muted flex items-center gap-2.5 text-foreground transition-colors"
+                  >
+                    <Camera className="w-4 h-4 text-primary" />
+                    <span>Upload New Cover</span>
+                  </button>
+
+                  {activeCover && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCropperState({
+                            isOpen: true,
+                            imageSrc: activeCover,
+                            cropShape: 'rect',
+                            aspectRatio: 2.8,
+                            title: 'Reposition Cover Banner',
+                            type: 'cover',
+                          });
+                          setCoverMenuOpen(false);
+                        }}
+                        className="w-full px-3 py-2 text-left text-xs font-medium rounded-xl hover:bg-surface-muted flex items-center gap-2.5 text-foreground transition-colors"
+                      >
+                        <Crop className="w-4 h-4 text-blue-500" />
+                        <span>Reposition / Crop</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLightboxMedia({ url: activeCover, title: 'Cover Photo' });
+                          setCoverMenuOpen(false);
+                        }}
+                        className="w-full px-3 py-2 text-left text-xs font-medium rounded-xl hover:bg-surface-muted flex items-center gap-2.5 text-foreground transition-colors"
+                      >
+                        <Eye className="w-4 h-4 text-emerald-500" />
+                        <span>View Cover Photo</span>
+                      </button>
+
+                      <div className="my-1 border-t border-border/60" />
+
+                      <button
+                        type="button"
+                        onClick={handleRemoveCover}
+                        className="w-full px-3 py-2 text-left text-xs font-medium rounded-xl hover:bg-destructive/10 text-destructive flex items-center gap-2.5 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span>Remove Cover</span>
+                      </button>
+                    </>
+                  )}
+                </div>
               )}
-              <span className="hidden sm:inline">Change Cover Photo</span>
-            </button>
+            </div>
           </div>
 
           {/* Profile Identity Info Bar */}
           <div className="px-6 pb-6 relative">
             <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between -mt-16 sm:-mt-20 mb-4 gap-4">
-              {/* Avatar with Camera Overlay */}
+              {/* Avatar with Management Overlay */}
               <div className="relative group">
                 <input
                   type="file"
@@ -260,20 +458,29 @@ export default function MyProfilePage() {
                   data-testid="avatar-file-input"
                   className="hidden"
                 />
-                <div className="rounded-full p-1 bg-surface shadow-2xl">
+                <div
+                  className="rounded-full p-1 bg-surface shadow-2xl cursor-pointer"
+                  onClick={() => {
+                    if (avatarUrl) setLightboxMedia({ url: avatarUrl, title: 'Profile Picture' });
+                  }}
+                  title={avatarUrl ? 'Click to view photo' : undefined}
+                >
                   <UserAvatar
                     displayName={profileData?.displayName || user?.displayName}
                     username={user?.username}
-                    avatarMediaId={profileData?.avatarMediaId || user?.avatarMediaId}
+                    avatarMediaId={rawAvatarMediaId}
                     previewUrl={avatarPreview}
                     size="2xl"
                     isOnline={true}
                   />
                 </div>
+
+                {/* Avatar Action Button */}
                 <button
-                  onClick={() => avatarInputRef.current?.click()}
+                  type="button"
+                  onClick={() => setAvatarMenuOpen((o) => !o)}
                   disabled={uploadingAvatar}
-                  title="Update profile picture"
+                  title="Change profile photo"
                   className="absolute bottom-1 right-1 p-2.5 rounded-full bg-primary hover:bg-primary-hover text-white shadow-lg border-2 border-surface transition-transform hover:scale-110 active:scale-95"
                 >
                   {uploadingAvatar ? (
@@ -282,6 +489,72 @@ export default function MyProfilePage() {
                     <Camera className="w-4 h-4" />
                   )}
                 </button>
+
+                {/* Avatar Dropdown Menu */}
+                {avatarMenuOpen && (
+                  <div className="absolute left-0 sm:left-full top-full sm:top-0 sm:ml-3 mt-2 sm:mt-0 w-52 bg-surface/95 backdrop-blur-md border border-border rounded-2xl shadow-2xl p-1.5 z-30 animate-in fade-in duration-150">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        avatarInputRef.current?.click();
+                        setAvatarMenuOpen(false);
+                      }}
+                      className="w-full px-3 py-2 text-left text-xs font-medium rounded-xl hover:bg-surface-muted flex items-center gap-2.5 text-foreground transition-colors"
+                    >
+                      <Camera className="w-4 h-4 text-primary" />
+                      <span>Upload New Avatar</span>
+                    </button>
+
+                    {(avatarPreview || avatarUrl) && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCropperState({
+                              isOpen: true,
+                              imageSrc: avatarPreview || avatarUrl!,
+                              cropShape: 'circle',
+                              aspectRatio: 1,
+                              title: 'Crop & Reposition Avatar',
+                              type: 'avatar',
+                            });
+                            setAvatarMenuOpen(false);
+                          }}
+                          className="w-full px-3 py-2 text-left text-xs font-medium rounded-xl hover:bg-surface-muted flex items-center gap-2.5 text-foreground transition-colors"
+                        >
+                          <Crop className="w-4 h-4 text-blue-500" />
+                          <span>Crop / Reposition</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLightboxMedia({
+                              url: avatarPreview || avatarUrl!,
+                              title: `${profileData?.displayName || user?.displayName}'s Profile Picture`,
+                            });
+                            setAvatarMenuOpen(false);
+                          }}
+                          className="w-full px-3 py-2 text-left text-xs font-medium rounded-xl hover:bg-surface-muted flex items-center gap-2.5 text-foreground transition-colors"
+                        >
+                          <Eye className="w-4 h-4 text-emerald-500" />
+                          <span>View Profile Picture</span>
+                        </button>
+
+                        <div className="my-1 border-t border-border/60" />
+
+                        <button
+                          type="button"
+                          onClick={handleRemoveAvatar}
+                          className="w-full px-3 py-2 text-left text-xs font-medium rounded-xl hover:bg-destructive/10 text-destructive flex items-center gap-2.5 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Remove Picture</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}
@@ -304,6 +577,14 @@ export default function MyProfilePage() {
               </div>
             </div>
 
+            {/* Success Notification */}
+            {successNote && (
+              <div className="mb-4 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+                <Check className="w-4 h-4" />
+                <span>Profile updated successfully</span>
+              </div>
+            )}
+
             {/* Name, Username, Bio */}
             <div className="text-center sm:text-left">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
@@ -318,210 +599,273 @@ export default function MyProfilePage() {
               <p className="text-xs text-muted font-medium mt-0.5">@{user?.username}</p>
 
               {profileData?.bio ? (
-                <p className="text-sm mt-3 text-foreground/90 max-w-2xl leading-relaxed whitespace-pre-wrap">
+                <p className="text-sm text-foreground/90 mt-3 max-w-xl leading-relaxed whitespace-pre-wrap">
                   {profileData.bio}
                 </p>
               ) : (
-                <p className="text-xs text-muted/70 italic mt-3">
-                  Tap &quot;Edit Profile&quot; to add a bio and tell your friends about yourself.
+                <p className="text-xs text-muted italic mt-2">
+                  No bio added yet. Click &quot;Edit Profile&quot; to tell friends about yourself.
                 </p>
               )}
+            </div>
 
-              {/* Stats Badges */}
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-5 mt-5 pt-4 border-t border-border/60 text-xs text-muted">
-                <button
-                  onClick={() => setActiveTab('friends')}
-                  className="flex items-center gap-1.5 font-semibold text-foreground hover:text-primary transition-colors"
-                >
-                  <Users className="w-4 h-4 text-primary" />
-                  <span>{profileData?.friendCount || 0}</span>
-                  <span className="text-muted font-normal">Friends</span>
-                </button>
+            {/* Social Stats Row */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6 pt-6 border-t border-border">
+              <button
+                onClick={() => setActiveTab('friends')}
+                className="p-3 rounded-2xl bg-surface-muted/50 hover:bg-surface-muted text-center transition-colors group border border-border/40"
+              >
+                <div className="text-xl font-black text-foreground group-hover:text-primary transition-colors">
+                  {profileData?.friendCount ?? myFriends.length}
+                </div>
+                <div className="text-xs text-muted font-medium flex items-center justify-center gap-1 mt-0.5">
+                  <Users className="w-3.5 h-3.5" />
+                  <span>Friends</span>
+                </div>
+              </button>
 
-                <button
-                  onClick={() => setActiveTab('moments')}
-                  className="flex items-center gap-1.5 font-semibold text-foreground hover:text-primary transition-colors"
-                >
-                  <Compass className="w-4 h-4 text-primary" />
-                  <span>{profileData?.postCount || 0}</span>
-                  <span className="text-muted font-normal">Moments</span>
-                </button>
+              <button
+                onClick={() => setActiveTab('moments')}
+                className="p-3 rounded-2xl bg-surface-muted/50 hover:bg-surface-muted text-center transition-colors group border border-border/40"
+              >
+                <div className="text-xl font-black text-foreground group-hover:text-primary transition-colors">
+                  {profileData?.postCount ?? myPosts.length}
+                </div>
+                <div className="text-xs text-muted font-medium flex items-center justify-center gap-1 mt-0.5">
+                  <Compass className="w-3.5 h-3.5" />
+                  <span>Moments</span>
+                </div>
+              </button>
 
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4" />
-                  <span>
-                    Joined {new Date(profileData?.createdAt || Date.now()).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-                  </span>
+              <div className="p-3 rounded-2xl bg-surface-muted/50 text-center col-span-2 sm:col-span-1 border border-border/40">
+                <div className="text-xs font-bold text-foreground truncate">
+                  {profileData?.createdAt ? new Date(profileData.createdAt).toLocaleDateString([], { month: 'short', year: 'numeric' }) : 'Active'}
+                </div>
+                <div className="text-xs text-muted font-medium flex items-center justify-center gap-1 mt-0.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>Joined</span>
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Navigation Tabs */}
-          <div className="flex items-center gap-6 px-6 border-t border-border bg-surface text-xs font-bold">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`py-3.5 border-b-2 transition-all ${
-                activeTab === 'overview'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted hover:text-foreground'
-              }`}
-            >
-              Overview & About
-            </button>
-            <button
-              onClick={() => setActiveTab('moments')}
-              className={`py-3.5 border-b-2 transition-all flex items-center gap-1.5 ${
-                activeTab === 'moments'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted hover:text-foreground'
-              }`}
-            >
-              <span>My Moments</span>
-              {profileData?.postCount > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px]">
-                  {profileData.postCount}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('friends')}
-              className={`py-3.5 border-b-2 transition-all flex items-center gap-1.5 ${
-                activeTab === 'friends'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted hover:text-foreground'
-              }`}
-            >
-              <span>Friends List</span>
-              {profileData?.friendCount > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px]">
-                  {profileData.friendCount}
-                </span>
-              )}
-            </button>
           </div>
         </div>
 
-        {/* Tab 1: Overview & About Cards */}
+        {/* Content Navigation Tabs */}
+        <div className="flex items-center gap-2 mb-6 border-b border-border pb-3">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'overview'
+                ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                : 'text-muted hover:text-foreground hover:bg-surface-muted'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Overview & About</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('moments')}
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'moments'
+                ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                : 'text-muted hover:text-foreground hover:bg-surface-muted'
+            }`}
+          >
+            <Compass className="w-3.5 h-3.5" />
+            <span>My Moments</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+              {profileData?.postCount ?? myPosts.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('friends')}
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'friends'
+                ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                : 'text-muted hover:text-foreground hover:bg-surface-muted'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>Friends List</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+              {profileData?.friendCount ?? myFriends.length}
+            </span>
+          </button>
+        </div>
+
+        {/* TAB 1: OVERVIEW */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Account Details Card */}
-            <div className="p-6 rounded-3xl bg-surface border border-border shadow-sm">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-muted mb-4 flex items-center gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-150">
+            {/* About Card */}
+            <div className="md:col-span-2 bg-surface border border-border rounded-3xl p-6 shadow-sm">
+              <h3 className="font-bold text-sm mb-4 text-foreground flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-primary" />
-                <span>Account Credentials</span>
+                <span>About Me</span>
               </h3>
-              <div className="space-y-3 text-xs">
-                <div className="flex items-center justify-between py-1 border-b border-border/40">
-                  <span className="text-muted">Username:</span>
-                  <span className="font-semibold text-foreground font-mono">@{user?.username}</span>
+              <p className="text-xs text-muted leading-relaxed whitespace-pre-wrap">
+                {profileData?.bio || 'You haven\'t added a biography yet. Share a few lines about your interests, passions, or greeting to friends.'}
+              </p>
+
+              <div className="mt-6 pt-6 border-t border-border grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-muted">Primary Email</p>
+                    <p className="text-xs font-semibold text-foreground truncate">{user?.email || 'Not provided'}</p>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between py-1 border-b border-border/40">
-                  <span className="text-muted">Email Address:</span>
-                  <span className="font-semibold text-foreground">{user?.email || 'Not configured'}</span>
-                </div>
-                <div className="flex items-center justify-between py-1 border-b border-border/40">
-                  <span className="text-muted">Status:</span>
-                  <span className="inline-flex items-center gap-1 text-emerald-500 font-semibold">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    Active & Verified
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-muted">Encryption:</span>
-                  <span className="font-semibold text-foreground">DTLS-SRTP / Argon2id</span>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-muted">Account Privacy</p>
+                    <p className="text-xs font-semibold text-foreground">Friends-Only Shield Active</p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Quick Actions & Privacy Card */}
-            <div className="p-6 rounded-3xl bg-surface border border-border shadow-sm">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-muted mb-4 flex items-center gap-2">
-                <Users className="w-4 h-4 text-primary" />
-                <span>Social Network Stats</span>
-              </h3>
-              <div className="space-y-3 text-xs">
-                <div className="flex items-center justify-between py-1 border-b border-border/40">
-                  <span className="text-muted">Connected Friends:</span>
-                  <span className="font-bold text-foreground">{profileData?.friendCount || 0} mutual friends</span>
-                </div>
-                <div className="flex items-center justify-between py-1 border-b border-border/40">
-                  <span className="text-muted">Published Moments:</span>
-                  <span className="font-bold text-foreground">{profileData?.postCount || 0} posts</span>
-                </div>
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-muted">Profile Visibility:</span>
-                  <span className="font-semibold text-primary">Friends Only</span>
-                </div>
+            {/* Quick Actions Card */}
+            <div className="bg-surface border border-border rounded-3xl p-6 shadow-sm flex flex-col justify-between gap-4">
+              <div>
+                <h3 className="font-bold text-sm mb-2 text-foreground">Profile Shortcuts</h3>
+                <p className="text-xs text-muted leading-relaxed">
+                  Fast access to manage your social presence, security settings, and conversation hub.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="w-full p-2.5 rounded-2xl bg-surface-muted hover:bg-surface border border-border text-xs font-semibold text-foreground text-left flex items-center justify-between transition-colors shadow-xs"
+                >
+                  <span className="flex items-center gap-2">
+                    <Edit3 className="w-4 h-4 text-primary" />
+                    <span>Edit Profile Details</span>
+                  </span>
+                  <span className="text-muted">→</span>
+                </button>
+
+                <Link
+                  href="/chats"
+                  className="w-full p-2.5 rounded-2xl bg-surface-muted hover:bg-surface border border-border text-xs font-semibold text-foreground text-left flex items-center justify-between transition-colors shadow-xs"
+                >
+                  <span className="flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-emerald-500" />
+                    <span>Go to Direct Chats</span>
+                  </span>
+                  <span className="text-muted">→</span>
+                </Link>
+
+                <Link
+                  href="/settings"
+                  className="w-full p-2.5 rounded-2xl bg-surface-muted hover:bg-surface border border-border text-xs font-semibold text-foreground text-left flex items-center justify-between transition-colors shadow-xs"
+                >
+                  <span className="flex items-center gap-2">
+                    <Settings className="w-4 h-4 text-amber-500" />
+                    <span>Privacy & Settings</span>
+                  </span>
+                  <span className="text-muted">→</span>
+                </Link>
               </div>
             </div>
           </div>
         )}
 
-        {/* Tab 2: My Moments Feed */}
+        {/* TAB 2: MY MOMENTS */}
         {activeTab === 'moments' && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-in fade-in duration-150">
             {loadingPosts ? (
-              <div className="p-12 text-center text-xs text-muted">Loading your moments...</div>
+              <div className="p-12 text-center text-sm text-muted">Loading your moments...</div>
             ) : myPosts.length === 0 ? (
-              <div className="p-12 text-center flex flex-col items-center bg-surface border border-border rounded-3xl">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-3">
-                  <Compass className="w-6 h-6" />
-                </div>
-                <h4 className="font-bold text-sm text-foreground mb-1">No Moments Yet</h4>
-                <p className="text-xs text-muted mb-4">Share your photos and updates with accepted friends.</p>
+              <div className="p-12 text-center flex flex-col items-center justify-center bg-surface border border-border rounded-3xl gap-3">
+                <Compass className="w-8 h-8 text-muted" />
+                <h4 className="font-bold text-sm text-foreground">You haven&apos;t posted any moments yet</h4>
+                <p className="text-xs text-muted max-w-sm">
+                  Share life updates, photos, or short video clips exclusively with your accepted friends.
+                </p>
                 <Link
                   href="/moments"
-                  className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary-hover shadow-md shadow-primary/20"
+                  className="mt-2 px-4 py-2 rounded-2xl bg-primary text-primary-foreground text-xs font-bold shadow-md shadow-primary/20 hover:bg-primary-hover transition-all"
                 >
-                  Create Moment
+                  Create First Moment
                 </Link>
               </div>
             ) : (
               myPosts.map((post) => (
-                <div key={post.id} className="p-6 rounded-3xl bg-surface border border-border shadow-sm space-y-3">
+                <div key={post.id} className="bg-surface border border-border rounded-3xl p-5 shadow-sm space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <UserAvatar
-                        displayName={user?.displayName}
-                        username={user?.username}
-                        avatarMediaId={user?.avatarMediaId}
-                        size="sm"
-                      />
-                      <div>
-                        <h4 className="font-bold text-xs">{user?.displayName}</h4>
-                        <p className="text-[10px] text-muted">
-                          {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-                        </p>
-                      </div>
+                    <div className="flex items-center gap-2 text-xs text-muted">
+                      <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
+                      <span>•</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Friends Only</span>
                     </div>
                   </div>
-                  <p className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed">
-                    {post.contentText}
-                  </p>
-                  <div className="pt-2 border-t border-border/50 flex items-center gap-4 text-xs text-muted font-medium">
-                    <span>{post.reactionCount || 0} Reactions</span>
-                    <span>•</span>
-                    <span>{post.commentCount || 0} Comments</span>
-                  </div>
+
+                  {post.contentText && (
+                    <p className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed">{post.contentText}</p>
+                  )}
+
+                  {post.media?.length > 0 && (
+                    <div className="rounded-2xl overflow-hidden bg-black/10">
+                      {post.media.map((pm: any) => {
+                        const mId = pm.mediaAssetId || pm.mediaAsset?.id;
+                        const isVid = pm.mediaAsset?.mimeType?.startsWith('video/') || post.postType === 'video';
+                        const url = getMediaUrl(mId);
+
+                        if (isVid) {
+                          return (
+                            <video
+                              key={mId}
+                              src={url}
+                              controls
+                              playsInline
+                              preload="metadata"
+                              className="w-full max-h-72 object-contain rounded-2xl bg-black"
+                            />
+                          );
+                        }
+
+                        return (
+                          <img
+                            key={mId}
+                            src={url}
+                            alt="Moment"
+                            crossOrigin="anonymous"
+                            className="w-full max-h-72 object-cover rounded-2xl cursor-pointer"
+                            onClick={() => setLightboxMedia({ url, title: 'Moment Photo' })}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               ))
             )}
           </div>
         )}
 
-        {/* Tab 3: Friends Grid */}
+        {/* TAB 3: FRIENDS */}
         {activeTab === 'friends' && (
-          <div>
+          <div className="space-y-4 animate-in fade-in duration-150">
             {loadingFriends ? (
-              <div className="p-12 text-center text-xs text-muted">Loading friends...</div>
+              <div className="p-12 text-center text-sm text-muted">Loading friends list...</div>
             ) : myFriends.length === 0 ? (
-              <div className="p-12 text-center flex flex-col items-center bg-surface border border-border rounded-3xl">
-                <Users className="w-8 h-8 text-muted mb-2" />
-                <p className="text-xs text-muted mb-4">You have not connected with any friends yet.</p>
+              <div className="p-12 text-center flex flex-col items-center justify-center bg-surface border border-border rounded-3xl gap-3">
+                <Users className="w-8 h-8 text-muted" />
+                <h4 className="font-bold text-sm text-foreground">No mutual friends yet</h4>
+                <p className="text-xs text-muted max-w-sm">
+                  Search friends by their exact username to send a connection request.
+                </p>
                 <Link
                   href="/friends"
-                  className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary-hover"
+                  className="mt-2 px-4 py-2 rounded-2xl bg-primary text-primary-foreground text-xs font-bold shadow-md shadow-primary/20 hover:bg-primary-hover transition-all"
                 >
                   Find Friends
                 </Link>
@@ -530,26 +874,28 @@ export default function MyProfilePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {myFriends.map((f) => (
                   <div
-                    key={f.id || f.friendId}
-                    className="p-3.5 rounded-2xl bg-surface border border-border shadow-sm flex items-center justify-between gap-3"
+                    key={f.friendId}
+                    className="p-4 rounded-3xl bg-surface border border-border flex items-center justify-between gap-3 shadow-xs"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <UserAvatar
                         displayName={f.displayName}
                         username={f.username}
                         avatarMediaId={f.avatarMediaId}
                         size="md"
                       />
-                      <div>
-                        <h4 className="font-bold text-xs text-foreground">{f.displayName}</h4>
-                        <p className="text-[10px] text-muted">@{f.username}</p>
+                      <div className="min-w-0">
+                        <p className="font-bold text-xs truncate text-foreground">{f.displayName}</p>
+                        <p className="text-[11px] text-muted truncate">@{f.username}</p>
                       </div>
                     </div>
+
                     <Link
-                      href={`/profile/${f.username}`}
-                      className="px-3 py-1.5 rounded-xl bg-surface-muted hover:bg-border text-xs font-semibold text-foreground transition-colors"
+                      href="/chats"
+                      className="p-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary transition-colors flex-shrink-0"
+                      title="Send message"
                     >
-                      View
+                      <MessageSquare className="w-4 h-4" />
                     </Link>
                   </div>
                 ))}
@@ -557,90 +903,122 @@ export default function MyProfilePage() {
             )}
           </div>
         )}
-      </div>
 
-      {/* Edit Profile Modal Dialog */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-surface border border-border shadow-2xl rounded-3xl max-w-lg w-full p-6 sm:p-8">
-            <div className="flex items-center justify-between pb-4 border-b border-border mb-6">
-              <div>
-                <h3 className="text-lg font-bold text-foreground">Edit Profile</h3>
-                <p className="text-xs text-muted">Update your display name and personal bio</p>
-              </div>
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="p-2 rounded-xl text-muted hover:text-foreground hover:bg-surface-muted transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {error && (
-              <div className="mb-4 p-3 rounded-xl bg-destructive/10 text-destructive text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSaveProfile} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-2">
-                  Display Name
-                </label>
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  maxLength={80}
-                  className="w-full px-4 py-3 rounded-2xl bg-background border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-2">
-                  Bio
-                </label>
-                <textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  maxLength={300}
-                  rows={4}
-                  placeholder="Share something about yourself with your friends..."
-                  className="w-full px-4 py-3 rounded-2xl bg-background border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground resize-none"
-                />
-                <span className="text-[10px] text-muted text-right block mt-1">{bio.length}/300 characters</span>
-              </div>
-
-              <div className="flex justify-end gap-2.5 pt-4 border-t border-border">
+        {/* Edit Profile Modal */}
+        {isEditModalOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+            <div className="bg-surface border border-border w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+              <div className="p-5 border-b border-border flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-base text-foreground">Edit Profile</h3>
+                  <p className="text-xs text-muted mt-0.5">Update your display name and personal bio</p>
+                </div>
                 <button
-                  type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="px-5 py-2.5 rounded-2xl border border-border text-xs font-semibold hover:bg-surface-muted transition-colors"
+                  className="p-1 rounded-full text-muted hover:text-foreground hover:bg-surface-muted transition-colors"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving || !displayName.trim()}
-                  className="px-6 py-2.5 rounded-2xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary-hover shadow-md shadow-primary/20 flex items-center gap-2 disabled:opacity-50 transition-all hover:scale-105 active:scale-95"
-                >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
 
-      {/* Success Toast */}
-      {successNote && (
-        <div className="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-emerald-600 text-white shadow-xl flex items-center gap-2 text-sm font-semibold animate-in slide-in-from-bottom duration-200">
-          <Check className="w-4 h-4" />
-          <span>Profile updated successfully</span>
-        </div>
-      )}
+              <form onSubmit={handleSaveProfile} className="p-6 space-y-4">
+                {error && (
+                  <div className="p-3 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-semibold text-foreground mb-1">Display Name</label>
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    maxLength={80}
+                    className="w-full px-4 py-2.5 rounded-2xl bg-background border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground"
+                    placeholder="Enter display name"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-foreground">Bio / About</label>
+                    <span className="text-[10px] text-muted">{bio.length}/300</span>
+                  </div>
+                  <textarea
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    maxLength={300}
+                    rows={4}
+                    className="w-full px-4 py-2.5 rounded-2xl bg-background border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground resize-none"
+                    placeholder="Write a brief introduction..."
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="px-4 py-2 rounded-2xl bg-surface-muted hover:bg-border text-xs font-semibold text-foreground transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving || !displayName.trim()}
+                    className="px-5 py-2 rounded-2xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary-hover shadow-md shadow-primary/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Interactive Image Cropper / Repositioner Modal */}
+        {cropperState.isOpen && (
+          <ImageCropperModal
+            isOpen={cropperState.isOpen}
+            imageSrc={cropperState.imageSrc}
+            cropShape={cropperState.cropShape}
+            aspectRatio={cropperState.aspectRatio}
+            title={cropperState.title}
+            onClose={() => setCropperState((prev) => ({ ...prev, isOpen: false }))}
+            onCropComplete={handleCropComplete}
+          />
+        )}
+
+        {/* High-Resolution Lightbox Viewer Modal */}
+        {lightboxMedia && (
+          <div
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+            onClick={() => setLightboxMedia(null)}
+          >
+            <div
+              className="relative max-w-4xl max-h-[90vh] flex flex-col items-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setLightboxMedia(null)}
+                title="Close viewer"
+                className="absolute -top-12 right-0 p-2 text-white/80 hover:text-white rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              <img
+                src={lightboxMedia.url}
+                alt={lightboxMedia.title}
+                crossOrigin="anonymous"
+                className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl"
+              />
+              <p className="text-white/80 text-xs font-medium mt-3">{lightboxMedia.title}</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

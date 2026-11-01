@@ -70,7 +70,7 @@ export class ProfilesService {
       displayName: targetUser.profile?.displayName || targetUser.username,
       bio: isSelf || isFriend ? targetUser.profile?.bio : null,
       avatarMediaId: targetUser.profile?.avatarMediaId,
-      coverMediaId: isSelf || isFriend ? targetUser.profile?.coverMediaId : null,
+      coverMediaId: targetUser.profile?.coverMediaId,
       friendCount,
       postCount: isSelf || isFriend ? postCount : null,
       isSelf,

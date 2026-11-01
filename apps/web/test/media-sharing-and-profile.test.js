@@ -373,6 +373,67 @@ async function runMediaAndProfileTests() {
     const hasAlicePost = (strangerFeed.posts || []).some(p => p.authorId === regA.user.id);
     check(!hasAlicePost, 'Stranger User C friends-only feed does NOT contain User A private moments');
 
+    // -----------------------------------------------------------------
+    // 6. INSTAGRAM-INSPIRED MOMENTS MANAGEMENT (CAPTION EDIT & DELETE)
+    // -----------------------------------------------------------------
+    console.log('\n6. Testing Moments Caption Editing and Moment Deletion...');
+
+    // Edit caption of first moment
+    await pageA.locator('button[title="Post options"]').first().click();
+    await pageA.waitForSelector('button:has-text("Edit Caption")', { timeout: 5000 });
+    await pageA.click('button:has-text("Edit Caption")');
+    await pageA.waitForSelector('textarea:has-text("Check out my video moment!")', { timeout: 5000 });
+    await pageA.fill('textarea:has-text("Check out my video moment!")', 'Updated video moment caption!');
+    await pageA.click('button:has-text("Save")');
+    await pageA.waitForSelector('text=Updated video moment caption!', { timeout: 5000 });
+    check(true, 'Moment caption successfully edited and updated in real-time');
+
+    // Delete moment
+    await pageA.locator('button[title="Post options"]').first().click();
+    await pageA.waitForSelector('button:has-text("Delete Moment")', { timeout: 5000 });
+    pageA.once('dialog', async dialog => {
+      await dialog.accept();
+    });
+    await pageA.click('button:has-text("Delete Moment")');
+    await pageA.waitForTimeout(1000);
+    const deletedCaption = await pageA.$('text=Updated video moment caption!');
+    check(!deletedCaption, 'Moment deleted and removed immediately from the feed');
+    await pageA.screenshot({ path: path.join(SCREENSHOT_DIR, 'media-06-moment-deleted.png') });
+
+    // -----------------------------------------------------------------
+    // 7. PROFILE & COVER IMAGE REMOVAL & MANAGEMENT
+    // -----------------------------------------------------------------
+    console.log('\n7. Testing Profile & Cover Picture Removal Endpoints & Persistence...');
+
+    // Delete cover image via API
+    const delCoverRes = await fetch(`${API_URL}/profiles/me/cover`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${tokenA}` },
+    });
+    check(delCoverRes.ok, 'DELETE /profiles/me/cover successfully removed cover image');
+
+    // Delete avatar image via API
+    const delAvatarRes = await fetch(`${API_URL}/profiles/me/avatar`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${tokenA}` },
+    });
+    check(delAvatarRes.ok, 'DELETE /profiles/me/avatar successfully removed profile avatar');
+
+    // Verify profile state after removal
+    const clearedProfileRes = await fetch(`${API_URL}/profiles/${regA.user.id}`, {
+      headers: { Authorization: `Bearer ${tokenA}` },
+    });
+    const clearedProfile = await clearedProfileRes.json();
+    check(!clearedProfile.coverMediaId, 'Profile coverMediaId is null after removal');
+    check(!clearedProfile.avatarMediaId, 'Profile avatarMediaId is null after removal');
+
+    // Reload profile page in browser and verify default fallbacks
+    await pageA.goto(`${BASE_URL}/profile`);
+    await pageA.waitForSelector('h1:has-text("Alice Media")', { timeout: 10000 });
+    const clearedCoverImg = await pageA.$('img[alt="Cover"]');
+    check(!clearedCoverImg, 'Cover image removed from profile banner; fallback displayed');
+    await pageA.screenshot({ path: path.join(SCREENSHOT_DIR, 'media-07-profile-cleared.png') });
+
     console.log('\n================================================================');
     console.log(`🎉 ALL MEDIA & PROFILE TESTS PASSED: ${passedChecks}/${totalChecks}`);
     console.log('================================================================\n');
