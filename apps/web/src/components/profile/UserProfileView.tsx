@@ -317,6 +317,18 @@ export default function UserProfileView({
             className="w-full h-full object-cover"
             onError={() => setCoverError(true)}
           />
+        ) : profile?.coverMediaId && coverError ? (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm text-white p-4 text-center">
+            <AlertCircle className="w-8 h-8 text-amber-400 mb-2" />
+            <p className="text-sm font-semibold">Could not load cover photo</p>
+            <button
+              type="button"
+              onClick={() => setCoverError(false)}
+              className="mt-2 px-3 py-1 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-xs font-semibold text-white transition-all border border-white/20"
+            >
+              Retry
+            </button>
+          </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center opacity-25">
             <span className="font-extrabold text-4xl sm:text-6xl tracking-widest text-white">CHITHI চিঠি</span>
@@ -336,9 +348,9 @@ export default function UserProfileView({
 
       {/* Profile Header & Identity Info */}
       <div className="px-6 pb-6 relative bg-surface border-b border-border/70">
-        <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between -mt-16 sm:-mt-20 mb-5 gap-4">
+        <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between -mt-16 sm:-mt-20 mb-5 gap-4 pointer-events-none">
           {/* Avatar */}
-          <div className="relative">
+          <div className="relative pointer-events-auto">
             <div className="rounded-full p-1 bg-surface shadow-2xl">
               <UserAvatar
                 displayName={profile.displayName}
@@ -351,7 +363,7 @@ export default function UserProfileView({
           </div>
 
           {/* Quick Action Buttons (Messenger Styled) */}
-          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 w-full sm:w-auto pointer-events-auto">
             {isSelf ? (
               <button
                 onClick={() => router.push('/settings')}

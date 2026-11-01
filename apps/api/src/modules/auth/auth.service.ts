@@ -101,6 +101,7 @@ export class AuthService {
         email: user.email,
         displayName: profile?.displayName || user.username,
         avatarMediaId: profile?.avatarMediaId,
+        coverMediaId: profile?.coverMediaId,
         isVerified: user.isVerified,
       },
       ...tokens,

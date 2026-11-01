@@ -84,7 +84,7 @@ export default function MyProfilePage() {
   const [loadingFriends, setLoadingFriends] = useState(false);
 
   const loadProfile = async () => {
-    if (!user) return;
+    if (!user?.id) return;
     setLoading(true);
     try {
       const data = await apiFetch<any>(`/profiles/${user.id}`);
@@ -99,8 +99,10 @@ export default function MyProfilePage() {
   };
 
   useEffect(() => {
-    loadProfile();
-  }, [user]);
+    if (user?.id) {
+      loadProfile();
+    }
+  }, [user?.id]);
 
   // Reset cover error when coverMediaId changes
   useEffect(() => {
@@ -198,6 +200,17 @@ export default function MyProfilePage() {
   const handleCoverFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file (JPEG, PNG, or WebP).');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      alert('Cover photo file size must be less than 15MB.');
+      e.target.value = '';
+      return;
+    }
 
     setCoverMenuOpen(false);
     const previewUrl = URL.createObjectURL(file);
@@ -339,17 +352,44 @@ export default function MyProfilePage() {
         <div className="bg-surface border border-border shadow-sm rounded-3xl overflow-hidden mb-6">
           {/* Cover Photo Banner */}
           <div className="relative h-44 sm:h-60 md:h-72 w-full bg-gradient-to-r from-indigo-700 via-primary to-purple-800 overflow-hidden group select-none">
-            {activeCover ? (
+            {coverPreview ? (
+              <div className="relative w-full h-full">
+                <img
+                  src={coverPreview}
+                  alt="Cover"
+                  className="w-full h-full object-cover"
+                />
+                {uploadingCover && (
+                  <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center text-white z-10">
+                    <Loader2 className="w-8 h-8 animate-spin mb-2" />
+                    <p className="text-xs font-semibold">Uploading cover photo...</p>
+                  </div>
+                )}
+              </div>
+            ) : coverUrl && !coverError ? (
               <img
-                src={activeCover}
+                src={coverUrl}
                 alt="Cover"
                 crossOrigin="anonymous"
                 className="w-full h-full object-cover cursor-pointer"
-                onClick={() => setLightboxMedia({ url: activeCover, title: 'Cover Photo' })}
+                onClick={() => setLightboxMedia({ url: coverUrl, title: 'Cover Photo' })}
                 onError={() => setCoverError(true)}
               />
+            ) : rawCoverMediaId && coverError ? (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm text-white p-4 text-center">
+                <AlertCircle className="w-8 h-8 text-amber-400 mb-2" />
+                <p className="text-sm font-semibold">Could not load cover photo</p>
+                <p className="text-xs text-white/70 mt-1 max-w-xs">The image file could not be retrieved from the server.</p>
+                <button
+                  type="button"
+                  onClick={() => setCoverError(false)}
+                  className="mt-3 px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-xs font-semibold text-white transition-all border border-white/20"
+                >
+                  Retry Loading
+                </button>
+              </div>
             ) : (
-              <div className="w-full h-full flex items-center justify-center opacity-30">
+              <div className="w-full h-full flex items-center justify-center opacity-30 select-none">
                 <span className="font-extrabold text-4xl sm:text-7xl tracking-widest text-white">চিঠি CHITHI</span>
               </div>
             )}
@@ -365,10 +405,10 @@ export default function MyProfilePage() {
             />
 
             {/* Cover Management Controls */}
-            <div className="absolute bottom-4 right-4 flex items-center gap-2">
+            <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2 pointer-events-auto">
               <button
                 type="button"
-                onClick={() => setCoverMenuOpen((o) => !o)}
+                onClick={() => coverInputRef.current?.click()}
                 disabled={uploadingCover}
                 className="px-3.5 py-2 rounded-2xl bg-black/60 hover:bg-black/80 text-white backdrop-blur-md text-xs font-semibold flex items-center gap-2 transition-all shadow-lg active:scale-95 border border-white/10"
               >
@@ -380,76 +420,61 @@ export default function MyProfilePage() {
                 <span>Change Cover Photo</span>
               </button>
 
-              {/* Cover Dropdown Menu */}
-              {coverMenuOpen && (
-                <div className="absolute right-0 bottom-12 w-52 bg-surface/95 backdrop-blur-md border border-border rounded-2xl shadow-2xl p-1.5 z-30 animate-in fade-in slide-in-from-bottom-2 duration-150">
+              {(coverPreview || (coverUrl && !coverError)) && (
+                <>
                   <button
                     type="button"
                     onClick={() => {
-                      coverInputRef.current?.click();
-                      setCoverMenuOpen(false);
+                      const src = coverPreview || coverUrl;
+                      if (src) {
+                        setCropperState({
+                          isOpen: true,
+                          imageSrc: src,
+                          cropShape: 'rect',
+                          aspectRatio: 2.8,
+                          title: 'Reposition Cover Banner',
+                          type: 'cover',
+                        });
+                      }
                     }}
-                    className="w-full px-3 py-2 text-left text-xs font-medium rounded-xl hover:bg-surface-muted flex items-center gap-2.5 text-foreground transition-colors"
+                    title="Reposition / Crop"
+                    className="p-2 rounded-2xl bg-black/60 hover:bg-black/80 text-white backdrop-blur-md text-xs transition-all shadow-lg active:scale-95 border border-white/10"
                   >
-                    <Camera className="w-4 h-4 text-primary" />
-                    <span>Upload New Cover</span>
+                    <Crop className="w-4 h-4 text-blue-400" />
                   </button>
 
-                  {activeCover && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCropperState({
-                            isOpen: true,
-                            imageSrc: activeCover,
-                            cropShape: 'rect',
-                            aspectRatio: 2.8,
-                            title: 'Reposition Cover Banner',
-                            type: 'cover',
-                          });
-                          setCoverMenuOpen(false);
-                        }}
-                        className="w-full px-3 py-2 text-left text-xs font-medium rounded-xl hover:bg-surface-muted flex items-center gap-2.5 text-foreground transition-colors"
-                      >
-                        <Crop className="w-4 h-4 text-blue-500" />
-                        <span>Reposition / Crop</span>
-                      </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const src = coverPreview || coverUrl;
+                      if (src) {
+                        setLightboxMedia({ url: src, title: 'Cover Photo' });
+                      }
+                    }}
+                    title="View Cover Photo"
+                    className="p-2 rounded-2xl bg-black/60 hover:bg-black/80 text-white backdrop-blur-md text-xs transition-all shadow-lg active:scale-95 border border-white/10"
+                  >
+                    <Maximize2 className="w-4 h-4 text-emerald-400" />
+                  </button>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLightboxMedia({ url: activeCover, title: 'Cover Photo' });
-                          setCoverMenuOpen(false);
-                        }}
-                        className="w-full px-3 py-2 text-left text-xs font-medium rounded-xl hover:bg-surface-muted flex items-center gap-2.5 text-foreground transition-colors"
-                      >
-                        <Eye className="w-4 h-4 text-emerald-500" />
-                        <span>View Cover Photo</span>
-                      </button>
-
-                      <div className="my-1 border-t border-border/60" />
-
-                      <button
-                        type="button"
-                        onClick={handleRemoveCover}
-                        className="w-full px-3 py-2 text-left text-xs font-medium rounded-xl hover:bg-destructive/10 text-destructive flex items-center gap-2.5 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Remove Cover</span>
-                      </button>
-                    </>
-                  )}
-                </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveCover}
+                    title="Remove Cover Photo"
+                    className="p-2 rounded-2xl bg-black/60 hover:bg-red-600/80 text-white backdrop-blur-md text-xs transition-all shadow-lg active:scale-95 border border-white/10 hover:border-red-500/30"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-400 hover:text-white" />
+                  </button>
+                </>
               )}
             </div>
           </div>
 
           {/* Profile Identity Info Bar */}
           <div className="px-6 pb-6 relative">
-            <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between -mt-16 sm:-mt-20 mb-4 gap-4">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between -mt-16 sm:-mt-20 mb-4 gap-4 pointer-events-none">
               {/* Avatar with Management Overlay */}
-              <div className="relative group">
+              <div className="relative group pointer-events-auto">
                 <input
                   type="file"
                   ref={avatarInputRef}
@@ -558,7 +583,7 @@ export default function MyProfilePage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2.5 pointer-events-auto">
                 <button
                   onClick={() => setIsEditModalOpen(true)}
                   className="px-4 py-2.5 rounded-2xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary-hover shadow-md shadow-primary/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
