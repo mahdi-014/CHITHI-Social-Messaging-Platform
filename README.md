@@ -68,14 +68,43 @@ In contrast to conventional platforms dominated by broadcast feeds, public influ
 
 ---
 
-## 4. Key Architectural Decisions
+## 4. Key Architectural Decisions (ADR)
 
-1. **Monorepo Architecture (PNPM Workspaces)**: Shared TypeScript configurations, isolated dependency trees, and unified development and build workflows across `apps/api` and `apps/web`.
-2. **NestJS Modular Backend**: Domain-driven feature modules (`Auth`, `Users`, `Profiles`, `Friendships`, `Conversations`, `Messages`, `Posts`, `Comments`, `Reactions`, `Media`, `Calls`, `Notifications`, `Realtime`) ensuring separation of concerns and dependency injection.
-3. **Strict Relational Data Modeling**: Foreign key constraints with explicit cascade and `SET NULL` policies ensure 0 orphan records across 24 database tables.
-4. **DTLS-SRTP Encrypted Media Plane**: Audio and video never touch the application backend, ensuring zero media latency, complete end-to-end encryption, and horizontal scalability.
-5. **Intent-Based Media Uploads**: Protects storage from unauthenticated file dumps by requiring a signed database intent before accepting binary payloads.
-6. **Pure Borderless Visual Language**: Elimination of harsh 1px bounding boxes and dividers in favor of subtle surface tints, organic wave curves, and tactile elevation.
+### ADR-001: Modular Monolith in PNPM Monorepo
+- **Decision**: Adopt a domain-driven Modular Monolith structure within a PNPM workspace.
+- **Context**: CHITHI requires strict transactional consistency for friendship acceptance and message outbox dispatch. A microservices architecture would introduce distributed transaction overhead and excessive memory consumption on developer and entry-level production machines.
+- **Consequences**: Zero network boundary latency, atomic relational transactions, simplified debugging, and straightforward code navigation, while maintaining clear domain isolation for future microservice extraction if needed.
+
+### ADR-002: Canonical User Pair Ordering for Bilateral Relationships
+- **Decision**: All two-party relationships (`friendships`, `direct_conversation_pairs`) enforce `user_low_id < user_high_id` as the primary key or unique index.
+- **Context**: Prevents duplicate reciprocal rows (e.g., A-B vs B-A) and eliminates redundant query branches.
+- **Consequences**: Queries deterministically compute `LEAST(u1, u2)` and `GREATEST(u1, u2)`. Eliminates race conditions in concurrent friend request acceptances.
+
+### ADR-003: Transactional Outbox Pattern for Real-Time Messaging
+- **Decision**: Persist message rows and corresponding `outbox_events` in the exact same database transaction before emitting WebSocket events.
+- **Context**: Socket disconnection or worker failure immediately following a database write could otherwise cause dropped messages or phantom client state.
+- **Consequences**: Guarantees at-least-once delivery semantics for real-time messages and completely decouples websocket fan-out from client request handlers.
+
+### ADR-004: Private Object Storage with Presigned Access Control
+- **Decision**: All user media (avatars, covers, chat attachments, moments) is stored in private object storage (local directory or private S3/MinIO buckets). No media is publicly reachable.
+- **Context**: User privacy is paramount. Strangers must never access media belonging to friends-only posts or private direct messages.
+- **Consequences**: Every media download is authorized server-side and served via short-lived (15-minute) signed tokens or authenticated byte-range streaming after validating friendship and conversation membership.
+
+### ADR-005: Stable Cursor-Based Pagination
+- **Decision**: Use `(created_at DESC, id DESC)` composite cursor pagination for message history, moments feeds, notifications, and call logs instead of `OFFSET / LIMIT`.
+- **Context**: High-frequency real-time messaging causes offset-based pagination to skip or duplicate records when new messages arrive while a user scrolls.
+- **Consequences**: O(1) query performance that scales indefinitely with table size without degradation or skipped records.
+
+### ADR-006: Analog "Quiet Connection" Borderless Design System
+- **Decision**: Pure borderless visual architecture using CSS custom properties mapped to Tailwind CSS tokens with `next-themes` and database persistence in `user_settings`.
+- **Context**: Elimination of harsh 1px borders, high-contrast outlines, and oversized rounded cards to deliver a calm, tactile, distraction-free environment.
+- **Consequences**: Clean UI components with zero visual clutter and seamless light/dark/system theme switching with zero flash of unstyled theme (FOUT).
+
+### 4.1 Architectural Diagrams Catalog
+High-resolution visual architecture assets are located in [`docs/diagrams/`](docs/diagrams/):
+- **[Entity Relationship Diagram](docs/diagrams/entity-relationship-diagram.png)**: Complete relational database schema mapping across all 24 entities.
+- **[High Level System Architecture](docs/diagrams/high-level-system-architecture.png)**: Monorepo multi-tier deployment flow (Browser -> Next.js -> Nginx -> NestJS -> PostgreSQL / Redis / MinIO).
+- **[Message Sending Process Flow](docs/diagrams/message-sending-process.png)**: Sequence diagram illustrating client dispatch, idempotency checks, atomic outbox persistence, delivery receipts, and socket broadcast.
 
 ---
 
@@ -306,6 +335,18 @@ All endpoints are versioned under `/api/v1`. Full documentation is available in 
 - `POST /api/v1/calls/:id/end` — Terminate active call.
 - `GET /api/v1/calls/history` — Paginated voice/video call history.
 
+### Standardized API Error Response
+All REST API error responses adhere to a consistent JSON error envelope:
+```json
+{
+  "statusCode": 400,
+  "code": "VALIDATION_FAILED",
+  "message": "Username must be between 3 and 30 characters.",
+  "requestId": "req_1793555000",
+  "details": null
+}
+```
+
 ---
 
 ## 12. Authentication & Security
@@ -333,6 +374,10 @@ Socket.IO manages bidirectional real-time events over a single persistent WebSoc
 | `call:invite` | Server -> Client | Notifies callee of incoming voice or video call |
 | `call:webrtc-signal` | Bidirectional | Exchanges SDP offers, answers, and ICE candidates |
 | `call:ended` | Server -> Client | Closes call modals on both ends immediately |
+
+### Socket.IO Room Topology
+- `user:{userId}`: Individual user room joined automatically upon authenticated socket connection. Receives direct notifications, incoming call invites, and friendship updates.
+- `conversation:{conversationId}`: Room joined dynamically when a user opens an active conversation. Receives instant messages, typing indicators, and read receipts.
 
 ---
 
@@ -638,7 +683,45 @@ node apps/api/scripts/restore-db.js apps/api/backups/backup-<timestamp>.json
 
 ---
 
-## 30. License & Maintenance Information
+## 30. Requirements Traceability Matrix
+
+| Requirement | Specification | Enforcement Mechanism |
+|---|---|---|
+| **FR-AUTH-01 / 02** | Unique registration with Argon2id | `AuthService.register()` with Argon2id parameters |
+| **FR-AUTH-03** | Dual JWT + Refresh Token Rotation | `JwtService` (15m access) + `user_sessions` (7d refresh hash) |
+| **FR-PROF-01 / 02** | Profiles with avatar and cover images | `ProfilesService` with media verification and fallback handling |
+| **FR-FRIEND-01 / 02** | Exact username lookup & single pending request | `UsersService.search()` (exact lowercase) & partial DB index |
+| **FR-FRIEND-03 / 04** | Bilateral friendship acceptance | Single atomic transaction inserting `user_low_id < user_high_id` |
+| **FR-MSG-01 / 02** | Mutual friendship chat privilege | Gateway & controller guards reject non-friends and blocked users |
+| **FR-MSG-03 / 07** | Persistence first & client message deduplication | Atomic DB write + `outbox_events` and `(sender_id, client_message_id)` PK |
+| **FR-POST-01 / 04** | Permanent Moments with Friends-Only Feed | Chronological `(created_at DESC, id DESC)` cursor across accepted friends |
+| **FR-MEDIA-01 / 02** | 3-step intent upload with magic byte inspection | Intent creation -> binary upload -> byte-level verification -> complete |
+| **FR-CALL-01 / 04** | 1-on-1 WebRTC voice and video calling | Socket.IO signaling, P2P DTLS-SRTP encryption, Coturn TURN relay |
+| **FR-THEME-01** | Analog Quiet Connection borderless design | Tailwind CSS semantic tokens, CSS variables, database persistence |
+
+---
+
+## 31. Fail-Safe Database Hygiene Utility
+
+CHITHI includes an automated, non-destructive test data cleanup utility designed for local and development databases:
+
+```bash
+# 1. Default Dry-Run Mode (inspects records without modifying data)
+node apps/api/scripts/cleanup-synthetic-test-data.js
+
+# 2. Execution Mode (requires explicit --execute flag and non-production environment)
+node apps/api/scripts/cleanup-synthetic-test-data.js --execute
+```
+
+### Safety Guarantees
+- **Positive Identification**: Uses deterministic regex matching test runner patterns AND RFC 2606 reserved domains (`@example.com`, etc.). Zero hardcoded user allowlists.
+- **Production Guard**: Aborts immediately if `NODE_ENV=production` or if connecting to a cloud/production hostname.
+- **Mandatory Pre-Flight Backup**: Automatically creates a timestamped JSON backup with SHA-256 before any deletion in execution mode.
+- **Zero Orphan Guarantee**: Cleans un-cascaded dependencies before user removal and verifies 100% referential integrity upon completion.
+
+---
+
+## 32. License & Maintenance Information
 
 CHITHI is maintained as a clean, modular, and privacy-respecting messaging platform.
 

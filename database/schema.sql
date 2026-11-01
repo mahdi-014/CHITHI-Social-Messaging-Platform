@@ -30,6 +30,13 @@ CREATE TYPE notification_type AS ENUM (
 );
 CREATE TYPE device_platform AS ENUM ('web', 'android', 'ios');
 CREATE TYPE report_status AS ENUM ('open', 'reviewing', 'actioned', 'dismissed');
+CREATE TYPE call_type AS ENUM ('audio', 'video');
+CREATE TYPE call_status AS ENUM (
+  'initiating', 'ringing', 'accepted', 'rejected', 'cancelled', 'missed', 'busy', 'ended', 'failed'
+);
+CREATE TYPE call_end_reason AS ENUM (
+  'caller_hung_up', 'callee_hung_up', 'rejected', 'cancelled', 'missed_timeout', 'busy', 'connection_failed', 'error'
+);
 
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -339,6 +346,27 @@ CREATE TABLE reports (
   reviewed_at TIMESTAMPTZ
 );
 CREATE INDEX idx_reports_status_created ON reports (status, created_at);
+
+CREATE TABLE call_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  caller_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  receiver_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  call_type call_type NOT NULL,
+  status call_status NOT NULL DEFAULT 'initiating',
+  end_reason call_end_reason,
+  initiated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ringing_at TIMESTAMPTZ,
+  accepted_at TIMESTAMPTZ,
+  ended_at TIMESTAMPTZ,
+  duration_seconds INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_calls_conversation_created ON call_sessions (conversation_id, created_at DESC);
+CREATE INDEX idx_calls_caller_created ON call_sessions (caller_id, created_at DESC);
+CREATE INDEX idx_calls_receiver_created ON call_sessions (receiver_id, created_at DESC);
+CREATE INDEX idx_calls_status ON call_sessions (status);
 
 CREATE TABLE outbox_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

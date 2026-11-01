@@ -6,15 +6,16 @@ const crypto = require('crypto');
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://chithi:chithi_secret@localhost:5432/chithi_db';
 const BACKUP_DIR = path.resolve(__dirname, '..', 'backups');
 
-async function backupDatabase() {
+async function backupDatabase(targetDatabaseUrl) {
+  const dbUrl = targetDatabaseUrl || DATABASE_URL;
   console.log('=== CHITHI DATABASE BACKUP ===');
-  console.log(`Connecting to database: ${DATABASE_URL.replace(/:[^:@]+@/, ':***@')}`);
+  console.log(`Connecting to database: ${dbUrl.replace(/:[^:@]+@/, ':***@')}`);
 
   if (!fs.existsSync(BACKUP_DIR)) {
     fs.mkdirSync(BACKUP_DIR, { recursive: true });
   }
 
-  const client = new Client({ connectionString: DATABASE_URL });
+  const client = new Client({ connectionString: dbUrl });
   await client.connect();
 
   try {
