@@ -3,7 +3,7 @@
 **Project:** CHITHI Social Messaging Platform  
 **Directory Root:** `apps/web/public/`  
 **Generated Date:** 2026-11-01  
-**Total Production Assets:** 43 Verified Files  
+**Total Production Assets:** 47 Verified Files  
 
 ---
 
@@ -15,6 +15,10 @@
 | `logo-primary.png` | PNG | 1170 × 300 px | High-resolution raster primary logo | External platforms, non-SVG media |
 | `logo-compact.svg` | SVG | Vector (460×120) | Compact horizontal logo for tighter headers | Web app navigation bars, mobile headers |
 | `logo-compact.png` | PNG | 690 × 180 px | High-resolution compact raster logo | Compact web headers, email headers |
+| `logo-compact-light.svg` | SVG | Vector (460×120) | Compact horizontal logo with dark text for light themes | Light theme compact headers |
+| `logo-compact-light.png` | PNG | 690 × 180 px | High-resolution compact raster logo for light themes | Light theme compact raster displays |
+| `logo-compact-dark.svg` | SVG | Vector (460×120) | Compact horizontal logo with light text for dark themes | Dark theme compact headers |
+| `logo-compact-dark.png` | PNG | 690 × 180 px | High-resolution compact raster logo for dark themes | Dark theme compact raster displays |
 | `logo-symbol.svg` | SVG | Vector (512×512) | Master standalone CHITHI icon mark (Squircle + C-Envelope) | Sidebar icon, loading screens, UI badge |
 | `logo-symbol.png` | PNG | 512 × 512 px | High-resolution raster symbol | Native application shortcuts, avatar badges |
 | `logo-wordmark.svg`| SVG | Vector (540×140) | Typography wordmark without symbol | Footer branding, text-only placements |
@@ -90,3 +94,4 @@
 | Filename | Format | Size | Purpose | Usage Location |
 |---|:---:|:---:|---|---|
 | `manifest.json` | JSON | 1.8 KB | Progressive Web App manifest configuring icon resolutions & theme | Linked via `<link rel="manifest">` in HTML `<head>` |
+

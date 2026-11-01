@@ -49,10 +49,15 @@ The **Secondary / Compact Logo** provides a space-optimized horizontal lockup fo
 - **Master Files**:
   - Vector: `apps/web/public/brand/logo/logo-compact.svg`
   - High-Res PNG: `apps/web/public/brand/logo/logo-compact.png` (690 × 180 px)
+  - Light Mode Vector: `apps/web/public/brand/logo/logo-compact-light.svg`
+  - Light Mode PNG: `apps/web/public/brand/logo/logo-compact-light.png` (690 × 180 px)
+  - Dark Mode Vector: `apps/web/public/brand/logo/logo-compact-dark.svg`
+  - Dark Mode PNG: `apps/web/public/brand/logo/logo-compact-dark.png` (690 × 180 px)
 - **Usage**:
   - Application dashboard top navigation bar.
   - Mobile web app header.
   - Compact modal headers.
+  - Available through the reusable `<BrandLogo variant="compact" />` React component.
 
 ---
 
@@ -194,6 +199,8 @@ apps/web/public/
     ├── logo/
     │   ├── logo-primary.svg / .png
     │   ├── logo-compact.svg / .png
+    │   ├── logo-compact-light.svg / .png
+    │   ├── logo-compact-dark.svg / .png
     │   ├── logo-symbol.svg / .png
     │   ├── logo-wordmark.svg / .png
     │   ├── logo-light.svg / .png
@@ -222,3 +229,4 @@ apps/web/public/
         ├── brand-background-light.svg
         └── brand-background-dark.svg
 ```
+

@@ -254,9 +254,11 @@ export default function ChatsPage() {
             <div className="p-6 text-center text-sm text-muted">Loading chats...</div>
           ) : filteredConversations.length === 0 ? (
             <div className="p-8 text-center flex flex-col items-center justify-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-surface-muted flex items-center justify-center text-muted">
-                <MessageSquare className="w-6 h-6" />
-              </div>
+              <img
+                src="/brand/logo/logo-symbol.svg"
+                alt="CHITHI"
+                className="w-12 h-12 rounded-2xl shadow-sm mb-1 object-contain"
+              />
               <p className="text-sm font-medium">No conversations yet</p>
               <p className="text-xs text-muted max-w-xs">
                 Start a direct chat with one of your accepted friends.
@@ -483,9 +485,11 @@ export default function ChatsPage() {
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-surface border border-border flex items-center justify-center text-primary shadow-sm mb-4">
-              <MessageSquare className="w-8 h-8" />
-            </div>
+            <img
+              src="/brand/logo/logo-symbol.svg"
+              alt="CHITHI"
+              className="w-16 h-16 rounded-2xl shadow-md shadow-primary/20 mb-4 object-contain"
+            />
             <h2 className="text-xl font-bold tracking-tight mb-1">Select a conversation</h2>
             <p className="text-sm text-muted max-w-sm">
               Choose an active chat from the sidebar or start a new conversation with an accepted friend.

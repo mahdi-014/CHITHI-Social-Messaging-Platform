@@ -15,6 +15,12 @@ export default function IncomingCallModal() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="bg-surface border border-border/80 shadow-2xl rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center flex flex-col items-center">
+        {/* Brand Header */}
+        <div className="flex items-center gap-1.5 mb-5 text-[11px] font-semibold text-muted tracking-wide uppercase">
+          <img src="/brand/logo/logo-symbol.svg" alt="CHITHI" className="w-4 h-4 object-contain rounded-md" />
+          <span>CHITHI Secure Call</span>
+        </div>
+
         {/* Pulsing Avatar */}
         <div className="relative mb-6">
           <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping duration-1000" />

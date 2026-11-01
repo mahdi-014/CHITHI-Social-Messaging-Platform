@@ -381,3 +381,4 @@ capturePreview()
     console.error('Failed to capture preview:', err);
     process.exit(1);
   });
+

@@ -435,7 +435,10 @@ export default function SettingsPage() {
 
         {/* Footer / App Version Info */}
         <div className="p-4 border-t border-border flex items-center justify-between text-xs text-muted">
-          <span>CHITHI v3.5 (Messenger Edition)</span>
+          <div className="flex items-center gap-2">
+            <img src="/brand/logo/logo-symbol.svg" alt="CHITHI" className="w-4 h-4 object-contain rounded-md" />
+            <span>CHITHI v3.5 (Messenger Edition)</span>
+          </div>
           <span className="w-2 h-2 rounded-full bg-emerald-500" title="Connected" />
         </div>
       </div>
@@ -579,9 +582,11 @@ export default function SettingsPage() {
                   CHITHI uses a modern Messenger-inspired royal blue accent with sleek rounded geometry.
                 </p>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs shadow-sm shadow-primary/30">
-                    চি
-                  </div>
+                  <img
+                    src="/brand/logo/logo-symbol.svg"
+                    alt="CHITHI"
+                    className="w-8 h-8 rounded-xl object-contain shadow-sm"
+                  />
                   <div className="text-xs">
                     <p className="font-bold text-foreground">Royal Messenger Blue</p>
                     <p className="text-muted">Primary interactive accent</p>

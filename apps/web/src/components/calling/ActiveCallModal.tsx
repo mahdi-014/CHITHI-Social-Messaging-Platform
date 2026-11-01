@@ -70,6 +70,12 @@ export default function ActiveCallModal() {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
         <div className="bg-surface border border-border shadow-2xl rounded-3xl p-8 max-w-sm w-full text-center flex flex-col items-center">
+          {/* Brand Header */}
+          <div className="flex items-center gap-1.5 mb-5 text-[11px] font-semibold text-muted tracking-wide uppercase">
+            <img src="/brand/logo/logo-symbol.svg" alt="CHITHI" className="w-4 h-4 object-contain rounded-md" />
+            <span>CHITHI Calling</span>
+          </div>
+
           {/* Avatar with outgoing pulse wave */}
           <div className="relative mb-6">
             <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping duration-1000" />
@@ -126,7 +132,10 @@ export default function ActiveCallModal() {
               {peerName ? peerName[0].toUpperCase() : 'U'}
             </div>
             <div>
-              <h4 className="font-bold text-sm leading-tight text-white drop-shadow-sm">{peerName}</h4>
+              <div className="flex items-center gap-1.5">
+                <img src="/brand/logo/logo-symbol.svg" alt="CHITHI" className="w-3.5 h-3.5 object-contain rounded-sm" />
+                <h4 className="font-bold text-sm leading-tight text-white drop-shadow-sm">{peerName}</h4>
+              </div>
               <div className="flex items-center gap-1.5 text-[11px] text-white/80">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 <span>{formatDuration(callDuration)}</span>

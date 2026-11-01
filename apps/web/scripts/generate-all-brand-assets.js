@@ -636,13 +636,15 @@ async function generateAllAssets() {
   // 1. Logos
   fs.writeFileSync(path.join(LOGO_DIR, 'logo-primary.svg'), getPrimaryLogoSvg('dark'));
   fs.writeFileSync(path.join(LOGO_DIR, 'logo-compact.svg'), getCompactLogoSvg('dark'));
+  fs.writeFileSync(path.join(LOGO_DIR, 'logo-compact-light.svg'), getCompactLogoSvg('light'));
+  fs.writeFileSync(path.join(LOGO_DIR, 'logo-compact-dark.svg'), getCompactLogoSvg('dark'));
   fs.writeFileSync(path.join(LOGO_DIR, 'logo-symbol.svg'), getSymbolSvg('default'));
   fs.writeFileSync(path.join(LOGO_DIR, 'logo-wordmark.svg'), getWordmarkSvg('#FFFFFF', '#19C6C5'));
   fs.writeFileSync(path.join(LOGO_DIR, 'logo-light.svg'), getPrimaryLogoSvg('light'));
   fs.writeFileSync(path.join(LOGO_DIR, 'logo-dark.svg'), getPrimaryLogoSvg('dark'));
   fs.writeFileSync(path.join(LOGO_DIR, 'logo-white.svg'), getPrimaryLogoSvg('white'));
   fs.writeFileSync(path.join(LOGO_DIR, 'logo-black.svg'), getPrimaryLogoSvg('black'));
-  console.log('   ✓ 8 logo SVG files written to brand/logo/');
+  console.log('   ✓ Logo SVG files written to brand/logo/');
 
   // 2. Favicons
   fs.writeFileSync(path.join(FAVICON_DIR, 'favicon.svg'), getSymbolSvg('default'));
@@ -687,6 +689,8 @@ async function generateAllAssets() {
   console.log('\n[3/5] Rendering production Logo PNG variants...');
   await renderSvgToPng(getPrimaryLogoSvg('dark'), 1170, 300, path.join(LOGO_DIR, 'logo-primary.png'));
   await renderSvgToPng(getCompactLogoSvg('dark'), 690, 180, path.join(LOGO_DIR, 'logo-compact.png'));
+  await renderSvgToPng(getCompactLogoSvg('light'), 690, 180, path.join(LOGO_DIR, 'logo-compact-light.png'));
+  await renderSvgToPng(getCompactLogoSvg('dark'), 690, 180, path.join(LOGO_DIR, 'logo-compact-dark.png'));
   await renderSvgToPng(getSymbolSvg('default'), 512, 512, path.join(LOGO_DIR, 'logo-symbol.png'));
   await renderSvgToPng(getWordmarkSvg('#FFFFFF', '#19C6C5'), 810, 210, path.join(LOGO_DIR, 'logo-wordmark.png'));
   await renderSvgToPng(getPrimaryLogoSvg('light'), 1170, 300, path.join(LOGO_DIR, 'logo-light.png'));
@@ -778,3 +782,4 @@ generateAllAssets()
     console.error('Fatal error generating brand assets:', err);
     process.exit(1);
   });
+
