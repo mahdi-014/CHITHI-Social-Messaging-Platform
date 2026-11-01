@@ -5,10 +5,8 @@ services:
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-chithi}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-chithi_prod_secret}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be provided for production}
       POSTGRES_DB: ${POSTGRES_DB:-chithi_db}
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -31,10 +29,14 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-chithi}:${POSTGRES_PASSWORD:-chithi_prod_secret}@postgres:5432/${POSTGRES_DB:-chithi_db}?connection_limit=20&pool_timeout=10
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-chithi_super_secret_jwt_access_key_2026_prod}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-chithi_super_secret_jwt_refresh_key_2026_prod}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-chithi}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}@postgres:5432/${POSTGRES_DB:-chithi_db}?connection_limit=20&pool_timeout=10
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET must be provided for production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET must be provided for production}
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-local}
+      STORAGE_LOCAL_PATH: /app/uploads
+      TURN_SECRET: ${TURN_SECRET:-}
+      TURN_URLS: ${TURN_URLS:-}
+      STUN_URLS: ${STUN_URLS:-stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302}
     volumes:
       - uploads_data:/app/uploads
     healthcheck:
@@ -92,4 +94,3 @@ volumes:
 networks:
   chithi-network:
     driver: bridge
-

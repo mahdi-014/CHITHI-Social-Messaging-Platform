@@ -3,7 +3,7 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: chithi-postgres
+    container_name: chithi-postgres-dev
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-chithi}
@@ -12,8 +12,8 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ../../database/schema.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ../database/schema.sql:/docker-entrypoint-initdb.d/01-init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-chithi} -d ${POSTGRES_DB:-chithi_db}"]
       interval: 5s
@@ -22,12 +22,12 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: chithi-redis
+    container_name: chithi-redis-dev
     restart: unless-stopped
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
-      - redis_data:/data
+      - redis_dev_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -36,7 +36,7 @@ services:
 
   minio:
     image: minio/minio:latest
-    container_name: chithi-minio
+    container_name: chithi-minio-dev
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -46,7 +46,7 @@ services:
       - "${MINIO_PORT:-9000}:9000"
       - "9001:9001"
     volumes:
-      - minio_data:/data
+      - minio_dev_data:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
@@ -54,6 +54,6 @@ services:
       retries: 5
 
 volumes:
-  postgres_data:
-  redis_data:
-  minio_data:
+  postgres_dev_data:
+  redis_dev_data:
+  minio_dev_data:
