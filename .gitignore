@@ -1,0 +1,11 @@
+node_modules/
+.pnpm-store/
+dist/
+.next/
+.pgdata/
+uploads/
+*.log
+.env
+.env.*
+*.env
+

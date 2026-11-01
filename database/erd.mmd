@@ -1,0 +1,173 @@
+erDiagram
+    USERS ||--|| USER_PROFILES : has
+    USERS ||--o| USER_SETTINGS : has
+    USERS ||--o{ FRIEND_REQUESTS : sends
+    USERS ||--o{ FRIEND_REQUESTS : receives
+    USERS ||--o{ FRIENDSHIPS : user_low
+    USERS ||--o{ FRIENDSHIPS : user_high
+    USERS ||--o{ BLOCKS : blocker
+    USERS ||--o{ BLOCKS : blocked
+    USERS ||--o{ CONVERSATION_MEMBERS : joins
+    CONVERSATIONS ||--o{ CONVERSATION_MEMBERS : contains
+    CONVERSATIONS ||--o| DIRECT_CONVERSATION_PAIRS : maps
+    CONVERSATIONS ||--o{ MESSAGES : contains
+    USERS ||--o{ MESSAGES : sends
+    MESSAGES ||--o{ MESSAGE_ATTACHMENTS : has
+    MEDIA_ASSETS ||--o{ MESSAGE_ATTACHMENTS : attached
+    MESSAGES ||--o{ MESSAGE_RECEIPTS : has
+    USERS ||--o{ MESSAGE_RECEIPTS : receives
+    MESSAGES ||--o{ MESSAGE_REACTIONS : receives
+    USERS ||--o{ MESSAGE_REACTIONS : reacts
+    USERS ||--o{ POSTS : creates
+    POSTS ||--o{ POST_MEDIA : contains
+    MEDIA_ASSETS ||--o{ POST_MEDIA : attached
+    POSTS ||--o{ POST_REACTIONS : receives
+    USERS ||--o{ POST_REACTIONS : reacts
+    POSTS ||--o{ POST_COMMENTS : contains
+    USERS ||--o{ POST_COMMENTS : writes
+    POST_COMMENTS ||--o{ POST_COMMENTS : replies
+    USERS ||--o{ NOTIFICATIONS : receives
+    USERS ||--o{ DEVICES : registers
+    USERS ||--o{ USER_SESSIONS : owns
+    USERS ||--o{ REPORTS : submits
+
+    USERS {
+      uuid id PK
+      varchar username UK
+      varchar email UK
+      varchar phone UK
+      text password_hash
+      enum account_status
+      boolean is_verified
+    }
+    USER_PROFILES {
+      uuid user_id PK,FK
+      varchar display_name
+      varchar bio
+      uuid avatar_media_id FK
+      uuid cover_media_id FK
+    }
+    USER_SETTINGS {
+      uuid user_id PK,FK
+      boolean show_online_status
+      boolean show_last_seen
+      varchar theme_preference
+    }
+    FRIEND_REQUESTS {
+      uuid id PK
+      uuid sender_id FK
+      uuid receiver_id FK
+      enum status
+    }
+    FRIENDSHIPS {
+      uuid user_low_id PK,FK
+      uuid user_high_id PK,FK
+    }
+    BLOCKS {
+      uuid blocker_id PK,FK
+      uuid blocked_id PK,FK
+    }
+    CONVERSATIONS {
+      uuid id PK
+      enum type
+      uuid created_by FK
+      uuid last_message_id FK
+    }
+    DIRECT_CONVERSATION_PAIRS {
+      uuid conversation_id PK,FK
+      uuid user_low_id FK
+      uuid user_high_id FK
+    }
+    CONVERSATION_MEMBERS {
+      uuid id PK
+      uuid conversation_id FK
+      uuid user_id FK
+      enum role
+      timestamp left_at
+    }
+    MESSAGES {
+      uuid id PK
+      uuid conversation_id FK
+      uuid sender_id FK
+      uuid client_message_id
+      enum message_type
+      text body
+      uuid reply_to_message_id FK
+    }
+    MEDIA_ASSETS {
+      uuid id PK
+      uuid owner_id FK
+      text storage_key
+      varchar mime_type
+      bigint file_size
+      enum processing_status
+    }
+    MESSAGE_ATTACHMENTS {
+      uuid id PK
+      uuid message_id FK
+      uuid media_asset_id FK
+    }
+    MESSAGE_RECEIPTS {
+      uuid id PK
+      uuid message_id FK
+      uuid user_id FK
+      timestamp delivered_at
+      timestamp read_at
+    }
+    MESSAGE_REACTIONS {
+      uuid id PK
+      uuid message_id FK
+      uuid user_id FK
+      varchar reaction
+    }
+    POSTS {
+      uuid id PK
+      uuid author_id FK
+      enum post_type
+      text content_text
+      enum visibility
+    }
+    POST_MEDIA {
+      uuid id PK
+      uuid post_id FK
+      uuid media_asset_id FK
+    }
+    POST_REACTIONS {
+      uuid id PK
+      uuid post_id FK
+      uuid user_id FK
+      varchar reaction_type
+    }
+    POST_COMMENTS {
+      uuid id PK
+      uuid post_id FK
+      uuid author_id FK
+      uuid parent_comment_id FK
+      text body
+    }
+    NOTIFICATIONS {
+      uuid id PK
+      uuid user_id FK
+      uuid actor_id FK
+      enum notification_type
+      uuid entity_id
+    }
+    DEVICES {
+      uuid id PK
+      uuid user_id FK
+      enum platform
+      text device_token
+    }
+    USER_SESSIONS {
+      uuid id PK
+      uuid user_id FK
+      text refresh_token_hash
+      timestamp expires_at
+    }
+    REPORTS {
+      uuid id PK
+      uuid reporter_id FK
+      varchar target_type
+      uuid target_id
+      enum status
+    }

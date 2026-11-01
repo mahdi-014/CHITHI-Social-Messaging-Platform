@@ -1,0 +1,28 @@
+{
+  "name": "chithi-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CHITHI — Web-first, Friend-based Social Messaging Platform",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "dev:api": "pnpm --filter @chithi/api start:dev",
+    "dev:web": "pnpm --filter @chithi/web dev",
+    "build:api": "pnpm --filter @chithi/api build",
+    "build:web": "pnpm --filter @chithi/web build",
+    "build": "pnpm --filter \"@chithi/*\" build",
+    "test": "pnpm --filter \"@chithi/*\" test",
+    "lint": "pnpm --filter \"@chithi/*\" lint"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+      "argon2"
+    ]
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

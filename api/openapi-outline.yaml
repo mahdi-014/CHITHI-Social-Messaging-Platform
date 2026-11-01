@@ -1,0 +1,124 @@
+openapi: 3.1.0
+info:
+  title: Social Messaging Platform API
+  version: 1.0.0
+  description: Versioned REST API shared by the web client and future mobile clients.
+servers:
+  - url: https://api.example.com/api/v1
+paths:
+  /auth/register:
+    post:
+      summary: Register a user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password, displayName]
+              properties:
+                username: { type: string, minLength: 3, maxLength: 30 }
+                email: { type: string, format: email }
+                phone: { type: string }
+                password: { type: string, minLength: 10 }
+                displayName: { type: string, maxLength: 80 }
+      responses:
+        "201": { description: Account created; verification may be required }
+        "409": { description: Username or contact already exists }
+  /auth/login:
+    post:
+      summary: Authenticate and create a session
+      responses:
+        "200": { description: Authenticated }
+        "401": { description: Invalid credentials }
+  /users/search:
+    get:
+      summary: Exact username lookup for friend requests; not stranger discovery
+      parameters:
+        - in: query
+          name: username
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Matching user profile preview, subject to privacy rules }
+  /friend-requests:
+    post:
+      summary: Send a friend request
+      responses:
+        "201": { description: Request created }
+        "409": { description: Pending request, friendship, or block already exists }
+  /friend-requests/incoming:
+    get:
+      summary: List incoming friend requests
+      responses:
+        "200": { description: Paginated request list }
+  /friend-requests/{id}/accept:
+    post:
+      summary: Accept a request and create friendship atomically
+      responses:
+        "200": { description: Friendship established }
+  /friends:
+    get:
+      summary: List accepted friends
+      responses:
+        "200": { description: Paginated friend list }
+  /conversations:
+    get:
+      summary: List conversations available to the authenticated user
+      responses:
+        "200": { description: Paginated conversation list }
+  /conversations/direct:
+    post:
+      summary: Get or create the unique direct conversation with an accepted friend
+      responses:
+        "200": { description: Existing or newly created conversation }
+        "403": { description: Not friends or blocked }
+  /conversations/{conversationId}/messages:
+    get:
+      summary: Retrieve message history using cursor pagination
+      parameters:
+        - in: query
+          name: before
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 30 }
+      responses:
+        "200": { description: Paginated messages }
+  /posts:
+    post:
+      summary: Create a permanent friends-only post
+      responses:
+        "201": { description: Post created }
+  /feed:
+    get:
+      summary: Chronological feed of own posts and accepted friends' posts
+      responses:
+        "200": { description: Cursor-paginated friends-only feed }
+  /posts/{postId}/reactions:
+    post:
+      summary: Create or update a post reaction
+      responses:
+        "200": { description: Reaction saved }
+  /posts/{postId}/comments:
+    post:
+      summary: Add a comment to an accessible post
+      responses:
+        "201": { description: Comment created }
+  /media/upload-intents:
+    post:
+      summary: Create a validated, short-lived upload URL
+      responses:
+        "201": { description: Upload intent and signed URL }
+  /notifications:
+    get:
+      summary: List notifications
+      responses:
+        "200": { description: Cursor-paginated notifications }
+components:
+  securitySchemes:
+    accessToken:
+      type: http
+      scheme: bearer
+security:
+  - accessToken: []
