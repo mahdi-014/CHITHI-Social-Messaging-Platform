@@ -19,6 +19,21 @@ async function main() {
     await pg.initialise();
   }
 
+  const pidFile = path.join(pgDataDir, 'postmaster.pid');
+  if (fs.existsSync(pidFile)) {
+    try {
+      const pid = parseInt(fs.readFileSync(pidFile, 'utf8').trim().split('\n')[0], 10);
+      try {
+        process.kill(pid, 0);
+      } catch (e) {
+        console.log('[DB] Removing stale postmaster.pid (PID', pid, 'not running)');
+        fs.unlinkSync(pidFile);
+      }
+    } catch (e) {
+      fs.unlinkSync(pidFile);
+    }
+  }
+
   console.log('[DB] Starting PostgreSQL on port 5432...');
   await pg.start();
   console.log('[DB] PostgreSQL server running on port 5432!');

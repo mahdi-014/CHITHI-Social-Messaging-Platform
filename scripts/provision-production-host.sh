@@ -119,3 +119,4 @@ echo " Docker Version:  $(docker --version)"
 echo " Compose Version: $(docker compose version)"
 echo " Application Dir: /opt/chithi"
 echo "=================================================================="
+

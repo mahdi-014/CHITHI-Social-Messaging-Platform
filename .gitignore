@@ -10,7 +10,7 @@ out/
 *.tsbuildinfo
 
 # Database and Persistence
-.pgdata/
+.pgdata*/
 *.db
 *.sqlite
 

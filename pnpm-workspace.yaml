@@ -10,6 +10,7 @@ overrides:
   zod: 4.6.6
   postcss: 8.5.32
 allowBuilds:
+  '@embedded-postgres/linux-x64': true
   '@embedded-postgres/windows-x64': true
   '@nestjs/core': true
   '@prisma/client': true

@@ -29,5 +29,16 @@
   },
   "devDependencies": {
     "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@embedded-postgres/linux-x64",
+      "@embedded-postgres/windows-x64",
+      "argon2",
+      "@prisma/engines",
+      "@prisma/client",
+      "prisma",
+      "@scarf/scarf"
+    ]
   }
 }
