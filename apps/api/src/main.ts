@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
+import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
@@ -12,7 +13,12 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule);
+  // Disable default unbounded body-parser to enforce strict limits and prevent decompression attacks
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
+
+  // Enforce secure bounded request parsers
+  app.use(json({ limit: '10mb', inflate: false }));
+  app.use(urlencoded({ extended: true, limit: '10mb', parameterLimit: 1000, inflate: false }));
 
   // Enable graceful shutdown on SIGTERM / SIGINT
   app.enableShutdownHooks();

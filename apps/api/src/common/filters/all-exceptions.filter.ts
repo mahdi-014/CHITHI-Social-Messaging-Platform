@@ -39,6 +39,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
           details = res.details || null;
         }
       }
+    } else if ((exception as any)?.status || (exception as any)?.statusCode) {
+      status = (exception as any).status || (exception as any).statusCode;
+      message = (exception as any).message || message;
+      code = (exception as any).type || (exception as any).code || HttpStatus[status] || code;
     } else if (exception instanceof Error) {
       this.logger.error(`Unhandled Exception: ${exception.message}`, exception.stack);
     }

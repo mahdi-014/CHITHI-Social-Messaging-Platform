@@ -24,6 +24,8 @@ const PROTECTED_USERNAMES = ['mahdi', 'shahanaj', 'milu'];
 const SMOKE_USERNAME_REGEX = /^smoke_[ab]_[0-9]{8,18}$/;
 const SMOKE_EMAIL_REGEX = /^smoke_[ab]_[0-9]+@(example\.(com|org|net)|smoke\.chithi\.internal|test\.local)$/;
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 async function cleanupFromManifest(manifestFilePath, options = {}) {
   const isDryRun = options.dryRun !== undefined ? options.dryRun : !process.argv.includes('--execute');
   const targetDbUrl = options.databaseUrl || DATABASE_URL;
@@ -31,6 +33,10 @@ async function cleanupFromManifest(manifestFilePath, options = {}) {
   console.log('================================================================');
   console.log(`CHITHI PRODUCTION SMOKE-TEST CLEANUP (${isDryRun ? 'DRY-RUN' : 'LIVE EXECUTION'})`);
   console.log('================================================================');
+
+  if (!isDryRun && process.env.NODE_ENV === 'production' && process.env.ALLOW_PRODUCTION_SMOKE_CLEANUP !== 'true') {
+    throw new Error('SAFETY ABORT: Production smoke-test cleanup requires explicit ALLOW_PRODUCTION_SMOKE_CLEANUP=true authorization.');
+  }
 
   if (!fs.existsSync(manifestFilePath)) {
     throw new Error(`SAFETY ABORT: Smoke-test manifest file does not exist: ${manifestFilePath}`);
@@ -47,6 +53,18 @@ async function cleanupFromManifest(manifestFilePath, options = {}) {
   const userIds = Array.isArray(manifest.userIds) ? manifest.userIds : [];
   const messageIds = Array.isArray(manifest.messageIds) ? manifest.messageIds : [];
   const conversationIds = Array.isArray(manifest.conversationIds) ? manifest.conversationIds : [];
+
+  // Malformed UUID and duplicate checks
+  const allIds = [...userIds, ...messageIds, ...conversationIds];
+  for (const id of allIds) {
+    if (!UUID_REGEX.test(id)) {
+      throw new Error(`SAFETY ABORT: Malformed UUID detected in manifest: "${id}"`);
+    }
+  }
+
+  if (new Set(userIds).size !== userIds.length) {
+    throw new Error('SAFETY ABORT: Duplicate user IDs detected in manifest.');
+  }
 
   console.log(`Manifest Test Run ID: ${manifest.testRunId || 'unknown'}`);
   console.log(`Manifest Timestamp:   ${manifest.timestamp || 'unknown'}`);

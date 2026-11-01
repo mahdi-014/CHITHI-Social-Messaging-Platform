@@ -9,14 +9,21 @@ async function restoreDatabase(backupFilePath, targetDatabaseUrl) {
   console.log(`Target database: ${dbUrl.replace(/:[^:@]+@/, ':***@')}`);
   console.log(`Reading backup file: ${backupFilePath}`);
 
-  if (!fs.existsSync(backupFilePath)) {
-    throw new Error(`Backup file does not exist: ${backupFilePath}`);
+  let resolvedPath = backupFilePath;
+  if (!fs.existsSync(resolvedPath)) {
+    const backupDir = process.env.BACKUP_DIR || path.resolve(__dirname, '..', 'backups');
+    const fallbackPath = path.join(backupDir, path.basename(backupFilePath));
+    if (fs.existsSync(fallbackPath)) {
+      resolvedPath = fallbackPath;
+    } else {
+      throw new Error(`Backup file does not exist: ${backupFilePath}`);
+    }
   }
 
-  const rawJson = fs.readFileSync(backupFilePath, 'utf8');
+  const rawJson = fs.readFileSync(resolvedPath, 'utf8');
 
   // Checksum validation
-  const checksumFilePath = backupFilePath.replace(/\.json$/, '.sha256');
+  const checksumFilePath = resolvedPath.replace(/\.json$/, '.sha256');
   if (fs.existsSync(checksumFilePath)) {
     const expectedChecksum = fs.readFileSync(checksumFilePath, 'utf8').trim().split(/\s+/)[0];
     const actualChecksum = crypto.createHash('sha256').update(rawJson).digest('hex');
