@@ -264,25 +264,23 @@ export default function MomentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-primary p-0.5 shadow-md shadow-primary/20">
-            <div className="w-full h-full bg-surface rounded-[14px] flex items-center justify-center text-primary">
-              <Compass className="w-5 h-5" />
-            </div>
+          <div className="w-9 h-9 rounded-xl bg-surface-muted flex items-center justify-center text-primary">
+            <Compass className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">Moments</h1>
-            <p className="text-[11px] text-muted">Friends-only permanent social feed</p>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Moments</h1>
+            <p className="text-xs text-muted">Quiet memories and updates with friends</p>
           </div>
         </div>
 
-        <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-full bg-emerald-500/10 flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          Friends Only
+        <span className="text-[11px] font-medium text-primary px-2.5 py-1 rounded-full bg-primary/10 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+          Friends
         </span>
       </div>
 
-      {/* Instagram-Inspired Post Composer */}
-      <div className="bg-surface border border-border/80 rounded-3xl p-4 sm:p-5 mb-8 shadow-sm">
+      {/* Post Composer */}
+      <div className="bg-surface border border-border/60 rounded-2xl p-4 sm:p-5 mb-6 shadow-xs">
         <form onSubmit={handleCreatePost}>
           <div className="flex items-start gap-3">
             <UserAvatar
@@ -305,9 +303,9 @@ export default function MomentsPage() {
 
           {/* Selected Media Preview in Composer */}
           {selectedFile && (
-            <div className="mt-3 p-3 bg-surface-muted/60 border border-border rounded-2xl flex items-center justify-between gap-3 animate-in fade-in">
+            <div className="mt-3 p-3 bg-surface-muted/60 border border-border/60 rounded-xl flex items-center justify-between gap-3 animate-in fade-in">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-14 h-14 rounded-xl overflow-hidden bg-surface flex-shrink-0 relative border border-border">
+                <div className="w-14 h-14 rounded-lg overflow-hidden bg-surface flex-shrink-0 relative border border-border/60">
                   {fileType === 'image' && filePreview ? (
                     <img src={filePreview} alt="Preview" className="w-full h-full object-cover" />
                   ) : (
@@ -334,7 +332,7 @@ export default function MomentsPage() {
                 type="button"
                 onClick={handleClearAttachment}
                 disabled={posting}
-                className="p-1.5 rounded-full hover:bg-surface-muted text-muted hover:text-foreground transition-colors disabled:opacity-40"
+                className="p-1.5 rounded-lg hover:bg-surface-muted text-muted hover:text-foreground transition-colors disabled:opacity-40"
                 title="Remove attachment"
               >
                 <X className="w-4 h-4" />
@@ -361,16 +359,16 @@ export default function MomentsPage() {
           />
 
           {/* Composer Controls */}
-          <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/60">
-            <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+            <div className="flex items-center gap-1 sm:gap-2">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={posting}
                 title="Add Image"
-                className="px-3 py-1.5 rounded-xl text-muted hover:text-primary hover:bg-surface-muted transition-colors flex items-center gap-1.5 text-xs font-semibold disabled:opacity-40"
+                className="px-3 py-1.5 rounded-xl text-muted hover:text-primary hover:bg-surface-muted transition-colors flex items-center gap-1.5 text-xs font-medium disabled:opacity-40"
               >
-                <ImageIcon className="w-4 h-4 text-emerald-500" />
+                <ImageIcon className="w-4 h-4 text-primary" />
                 <span className="hidden sm:inline">Photo</span>
               </button>
 
@@ -379,9 +377,9 @@ export default function MomentsPage() {
                 onClick={() => videoInputRef.current?.click()}
                 disabled={posting}
                 title="Add Video"
-                className="px-3 py-1.5 rounded-xl text-muted hover:text-primary hover:bg-surface-muted transition-colors flex items-center gap-1.5 text-xs font-semibold disabled:opacity-40"
+                className="px-3 py-1.5 rounded-xl text-muted hover:text-primary hover:bg-surface-muted transition-colors flex items-center gap-1.5 text-xs font-medium disabled:opacity-40"
               >
-                <Video className="w-4 h-4 text-purple-500" />
+                <Video className="w-4 h-4 text-primary" />
                 <span className="hidden sm:inline">Video</span>
               </button>
             </div>
@@ -389,7 +387,7 @@ export default function MomentsPage() {
             <button
               type="submit"
               disabled={posting || (!postText.trim() && !selectedFile)}
-              className="px-5 py-2 rounded-2xl bg-primary text-primary-foreground font-semibold text-xs hover:bg-primary-hover shadow-md shadow-primary/20 transition-all flex items-center gap-1.5 disabled:opacity-50 active:scale-95"
+              className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium text-xs hover:bg-primary-hover transition-colors flex items-center gap-1.5 disabled:opacity-50 active:scale-98"
             >
               {posting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Post Moment'}
             </button>
@@ -427,23 +425,19 @@ export default function MomentsPage() {
             return (
               <article
                 key={post.id}
-                className="bg-surface border border-border/80 rounded-3xl overflow-hidden shadow-xs hover:border-border transition-all"
+                className="bg-surface border border-border/60 rounded-2xl overflow-hidden shadow-xs hover:border-border/80 transition-colors"
               >
-                {/* Instagram-Style Post Header */}
+                {/* Post Header */}
                 <div className="p-3.5 sm:p-4 flex items-center justify-between border-b border-border/40">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-0.5 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-primary">
-                      <div className="p-0.5 rounded-full bg-surface">
-                        <UserAvatar
-                          displayName={post.author?.profile?.displayName}
-                          username={post.author?.username}
-                          avatarMediaId={post.author?.profile?.avatarMediaId}
-                          size="md"
-                        />
-                      </div>
-                    </div>
+                    <UserAvatar
+                      displayName={post.author?.profile?.displayName}
+                      username={post.author?.username}
+                      avatarMediaId={post.author?.profile?.avatarMediaId}
+                      size="md"
+                    />
                     <div className="min-w-0">
-                      <h3 className="font-bold text-xs sm:text-sm text-foreground truncate">
+                      <h3 className="font-semibold text-xs sm:text-sm text-foreground truncate">
                         {post.author?.profile?.displayName || post.author?.username}
                       </h3>
                       <p className="text-[11px] text-muted truncate">
@@ -457,20 +451,20 @@ export default function MomentsPage() {
                     <button
                       type="button"
                       onClick={() => setOpenMenuPostId(openMenuPostId === post.id ? null : post.id)}
-                      className="p-1.5 rounded-full hover:bg-surface-muted text-muted hover:text-foreground transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-surface-muted text-muted hover:text-foreground transition-colors"
                       title="Post options"
                     >
                       <MoreHorizontal className="w-5 h-5" />
                     </button>
 
                     {openMenuPostId === post.id && (
-                      <div className="absolute right-0 top-8 w-44 bg-surface/95 backdrop-blur-md border border-border rounded-2xl shadow-xl p-1 z-30 animate-in fade-in duration-150">
+                      <div className="absolute right-0 top-8 w-44 bg-surface/95 backdrop-blur-md border border-border/60 rounded-xl shadow-lg p-1 z-30 animate-in fade-in duration-150">
                         {isOwner ? (
                           <>
                             <button
                               type="button"
                               onClick={() => handleStartEdit(post)}
-                              className="w-full px-3 py-2 text-left text-xs font-semibold rounded-xl hover:bg-surface-muted flex items-center gap-2 text-foreground transition-colors"
+                              className="w-full px-3 py-2 text-left text-xs font-medium rounded-lg hover:bg-surface-muted flex items-center gap-2 text-foreground transition-colors"
                             >
                               <Edit2 className="w-3.5 h-3.5 text-primary" />
                               <span>Edit Caption</span>
@@ -479,7 +473,7 @@ export default function MomentsPage() {
                               type="button"
                               onClick={() => handleDeletePost(post.id)}
                               disabled={isDeleting}
-                              className="w-full px-3 py-2 text-left text-xs font-semibold rounded-xl hover:bg-destructive/10 text-destructive flex items-center gap-2 transition-colors"
+                              className="w-full px-3 py-2 text-left text-xs font-medium rounded-lg hover:bg-destructive/10 text-destructive flex items-center gap-2 transition-colors"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                               <span>Delete Moment</span>
@@ -495,7 +489,7 @@ export default function MomentsPage() {
 
                 {/* Media Presentation Canvas */}
                 {postMediaItems.length > 0 && (
-                  <div className="relative w-full bg-black/95 flex items-center justify-center overflow-hidden">
+                  <div className="relative w-full bg-black/90 flex items-center justify-center overflow-hidden">
                     {postMediaItems.map((pm: any) => {
                       const mediaId = pm.mediaAssetId || pm.mediaAsset?.id;
                       const mime = pm.mediaAsset?.mimeType || '';
@@ -530,7 +524,7 @@ export default function MomentsPage() {
                             loading="lazy"
                           />
                           <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
-                            <span className="p-2.5 rounded-full bg-black/60 text-white backdrop-blur-md">
+                            <span className="p-2 rounded-full bg-black/60 text-white backdrop-blur-md">
                               <Maximize2 className="w-5 h-5" />
                             </span>
                           </div>
@@ -540,35 +534,35 @@ export default function MomentsPage() {
                   </div>
                 )}
 
-                {/* Instagram-Style Action Bar */}
+                {/* Action Bar */}
                 <div className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <button
                         type="button"
                         onClick={() => handleToggleReaction(post.id)}
-                        className={`transition-transform active:scale-125 ${
-                          hasLiked ? 'text-destructive' : 'text-foreground hover:opacity-80'
+                        className={`transition-transform active:scale-110 ${
+                          hasLiked ? 'text-destructive' : 'text-muted hover:text-foreground'
                         }`}
                         title={hasLiked ? 'Unlike' : 'Like'}
                       >
-                        <Heart className={`w-6 h-6 ${hasLiked ? 'fill-destructive' : ''}`} />
+                        <Heart className={`w-5 h-5 ${hasLiked ? 'fill-destructive' : ''}`} />
                       </button>
 
                       <button
                         type="button"
                         onClick={() => toggleComments(post.id)}
-                        className="text-foreground hover:opacity-80 transition-opacity"
+                        className="text-muted hover:text-foreground transition-colors"
                         title="Comment"
                       >
-                        <MessageCircle className="w-6 h-6" />
+                        <MessageCircle className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
 
                   {/* Likes Count */}
                   {(post.reactions?.length || 0) > 0 && (
-                    <p className="text-xs font-bold text-foreground">
+                    <p className="text-xs font-semibold text-foreground">
                       {post.reactions.length} {post.reactions.length === 1 ? 'like' : 'likes'}
                     </p>
                   )}

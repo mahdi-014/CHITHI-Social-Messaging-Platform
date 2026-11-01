@@ -348,10 +348,10 @@ export default function MyProfilePage() {
   return (
     <div className="flex-1 overflow-y-auto bg-background">
       <div className="max-w-4xl mx-auto py-4 sm:py-6 px-3 sm:px-6">
-        {/* Main Messenger Profile Card */}
-        <div className="bg-surface border border-border shadow-sm rounded-3xl overflow-hidden mb-6">
+        {/* Main Profile Card */}
+        <div className="bg-surface border border-border/60 shadow-xs rounded-2xl overflow-hidden mb-6">
           {/* Cover Photo Banner */}
-          <div className="relative h-44 sm:h-60 md:h-72 w-full bg-gradient-to-r from-indigo-700 via-primary to-purple-800 overflow-hidden group select-none">
+          <div className="relative h-44 sm:h-60 md:h-72 w-full bg-[#18262E] overflow-hidden group select-none">
             {coverPreview ? (
               <div className="relative w-full h-full">
                 <img
@@ -362,7 +362,7 @@ export default function MyProfilePage() {
                 {uploadingCover && (
                   <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center text-white z-10">
                     <Loader2 className="w-8 h-8 animate-spin mb-2" />
-                    <p className="text-xs font-semibold">Uploading cover photo...</p>
+                    <p className="text-xs font-medium">Uploading cover photo...</p>
                   </div>
                 )}
               </div>
@@ -383,14 +383,14 @@ export default function MyProfilePage() {
                 <button
                   type="button"
                   onClick={() => setCoverError(false)}
-                  className="mt-3 px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-xs font-semibold text-white transition-all border border-white/20"
+                  className="mt-3 px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-xs font-medium text-white transition-all border border-white/20"
                 >
                   Retry Loading
                 </button>
               </div>
             ) : (
-              <div className="w-full h-full flex items-center justify-center opacity-30 select-none">
-                <span className="font-extrabold text-4xl sm:text-7xl tracking-widest text-white">চিঠি CHITHI</span>
+              <div className="w-full h-full flex items-center justify-center opacity-20 select-none">
+                <span className="font-semibold text-3xl sm:text-5xl tracking-widest text-white">চিঠি CHITHI</span>
               </div>
             )}
 
@@ -410,7 +410,7 @@ export default function MyProfilePage() {
                 type="button"
                 onClick={() => coverInputRef.current?.click()}
                 disabled={uploadingCover}
-                className="px-3.5 py-2 rounded-2xl bg-black/60 hover:bg-black/80 text-white backdrop-blur-md text-xs font-semibold flex items-center gap-2 transition-all shadow-lg active:scale-95 border border-white/10"
+                className="px-3.5 py-1.5 rounded-xl bg-black/60 hover:bg-black/80 text-white backdrop-blur-md text-xs font-medium flex items-center gap-2 transition-colors active:scale-98 border border-white/10"
               >
                 {uploadingCover ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -438,9 +438,9 @@ export default function MyProfilePage() {
                       }
                     }}
                     title="Reposition / Crop"
-                    className="p-2 rounded-2xl bg-black/60 hover:bg-black/80 text-white backdrop-blur-md text-xs transition-all shadow-lg active:scale-95 border border-white/10"
+                    className="p-1.5 rounded-xl bg-black/60 hover:bg-black/80 text-white backdrop-blur-md text-xs transition-colors active:scale-98 border border-white/10"
                   >
-                    <Crop className="w-4 h-4 text-blue-400" />
+                    <Crop className="w-4 h-4 text-primary" />
                   </button>
 
                   <button
@@ -452,7 +452,7 @@ export default function MyProfilePage() {
                       }
                     }}
                     title="View Cover Photo"
-                    className="p-2 rounded-2xl bg-black/60 hover:bg-black/80 text-white backdrop-blur-md text-xs transition-all shadow-lg active:scale-95 border border-white/10"
+                    className="p-1.5 rounded-xl bg-black/60 hover:bg-black/80 text-white backdrop-blur-md text-xs transition-colors active:scale-98 border border-white/10"
                   >
                     <Maximize2 className="w-4 h-4 text-emerald-400" />
                   </button>
@@ -461,9 +461,9 @@ export default function MyProfilePage() {
                     type="button"
                     onClick={handleRemoveCover}
                     title="Remove Cover Photo"
-                    className="p-2 rounded-2xl bg-black/60 hover:bg-red-600/80 text-white backdrop-blur-md text-xs transition-all shadow-lg active:scale-95 border border-white/10 hover:border-red-500/30"
+                    className="p-1.5 rounded-xl bg-black/60 hover:bg-destructive text-white backdrop-blur-md text-xs transition-colors active:scale-98 border border-white/10"
                   >
-                    <Trash2 className="w-4 h-4 text-red-400 hover:text-white" />
+                    <Trash2 className="w-4 h-4 text-destructive-foreground hover:text-white" />
                   </button>
                 </>
               )}
@@ -586,7 +586,7 @@ export default function MyProfilePage() {
               <div className="flex items-center gap-2.5 pointer-events-auto">
                 <button
                   onClick={() => setIsEditModalOpen(true)}
-                  className="px-4 py-2.5 rounded-2xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary-hover shadow-md shadow-primary/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                  className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary-hover flex items-center gap-2 transition-colors active:scale-98"
                 >
                   <Edit3 className="w-4 h-4" />
                   <span>Edit Profile</span>
@@ -594,7 +594,7 @@ export default function MyProfilePage() {
 
                 <Link
                   href="/settings"
-                  className="p-2.5 rounded-2xl bg-surface-muted hover:bg-border text-foreground transition-colors shadow-sm"
+                  className="p-2 rounded-xl bg-surface-muted hover:bg-border text-foreground transition-colors"
                   title="Settings"
                 >
                   <Settings className="w-4 h-4" />
@@ -604,7 +604,7 @@ export default function MyProfilePage() {
 
             {/* Success Notification */}
             {successNote && (
-              <div className="mb-4 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+              <div className="mb-4 p-3 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-semibold flex items-center gap-2 animate-in fade-in">
                 <Check className="w-4 h-4" />
                 <span>Profile updated successfully</span>
               </div>
@@ -613,15 +613,15 @@ export default function MyProfilePage() {
             {/* Name, Username, Bio */}
             <div className="text-center sm:text-left">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+                <h1 className="text-2xl font-bold text-foreground tracking-tight">
                   {profileData?.displayName || user?.displayName}
                 </h1>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold self-center sm:self-auto">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium self-center sm:self-auto">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                   Active Now
                 </span>
               </div>
-              <p className="text-xs text-muted font-medium mt-0.5">@{user?.username}</p>
+              <p className="text-xs text-muted mt-0.5">@{user?.username}</p>
 
               {profileData?.bio ? (
                 <p className="text-sm text-foreground/90 mt-3 max-w-xl leading-relaxed whitespace-pre-wrap">
@@ -635,12 +635,12 @@ export default function MyProfilePage() {
             </div>
 
             {/* Social Stats Row */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6 pt-6 border-t border-border">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6 pt-6 border-t border-border/50">
               <button
                 onClick={() => setActiveTab('friends')}
-                className="p-3 rounded-2xl bg-surface-muted/50 hover:bg-surface-muted text-center transition-colors group border border-border/40"
+                className="p-3 rounded-xl bg-surface-muted/40 hover:bg-surface-muted text-center transition-colors group"
               >
-                <div className="text-xl font-black text-foreground group-hover:text-primary transition-colors">
+                <div className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
                   {profileData?.friendCount ?? myFriends.length}
                 </div>
                 <div className="text-xs text-muted font-medium flex items-center justify-center gap-1 mt-0.5">
@@ -651,9 +651,9 @@ export default function MyProfilePage() {
 
               <button
                 onClick={() => setActiveTab('moments')}
-                className="p-3 rounded-2xl bg-surface-muted/50 hover:bg-surface-muted text-center transition-colors group border border-border/40"
+                className="p-3 rounded-xl bg-surface-muted/40 hover:bg-surface-muted text-center transition-colors group"
               >
-                <div className="text-xl font-black text-foreground group-hover:text-primary transition-colors">
+                <div className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
                   {profileData?.postCount ?? myPosts.length}
                 </div>
                 <div className="text-xs text-muted font-medium flex items-center justify-center gap-1 mt-0.5">
@@ -662,8 +662,8 @@ export default function MyProfilePage() {
                 </div>
               </button>
 
-              <div className="p-3 rounded-2xl bg-surface-muted/50 text-center col-span-2 sm:col-span-1 border border-border/40">
-                <div className="text-xs font-bold text-foreground truncate">
+              <div className="p-3 rounded-xl bg-surface-muted/40 text-center col-span-2 sm:col-span-1">
+                <div className="text-xs font-semibold text-foreground truncate">
                   {profileData?.createdAt ? new Date(profileData.createdAt).toLocaleDateString([], { month: 'short', year: 'numeric' }) : 'Active'}
                 </div>
                 <div className="text-xs text-muted font-medium flex items-center justify-center gap-1 mt-0.5">
@@ -676,12 +676,12 @@ export default function MyProfilePage() {
         </div>
 
         {/* Content Navigation Tabs */}
-        <div className="flex items-center gap-2 mb-6 border-b border-border pb-3">
+        <div className="flex items-center gap-1.5 mb-6 border-b border-border/50 pb-3">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5 ${
               activeTab === 'overview'
-                ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                ? 'bg-primary text-primary-foreground'
                 : 'text-muted hover:text-foreground hover:bg-surface-muted'
             }`}
           >
@@ -691,30 +691,30 @@ export default function MyProfilePage() {
 
           <button
             onClick={() => setActiveTab('moments')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5 ${
               activeTab === 'moments'
-                ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                ? 'bg-primary text-primary-foreground'
                 : 'text-muted hover:text-foreground hover:bg-surface-muted'
             }`}
           >
             <Compass className="w-3.5 h-3.5" />
             <span>My Moments</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/10 dark:bg-white/10">
               {profileData?.postCount ?? myPosts.length}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('friends')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5 ${
               activeTab === 'friends'
-                ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                ? 'bg-primary text-primary-foreground'
                 : 'text-muted hover:text-foreground hover:bg-surface-muted'
             }`}
           >
             <Users className="w-3.5 h-3.5" />
             <span>Friends List</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/10 dark:bg-white/10">
               {profileData?.friendCount ?? myFriends.length}
             </span>
           </button>

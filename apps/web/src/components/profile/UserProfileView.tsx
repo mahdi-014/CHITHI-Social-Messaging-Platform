@@ -308,7 +308,7 @@ export default function UserProfileView({
   return (
     <div className={`w-full flex flex-col ${isModal ? 'max-h-[85vh] overflow-y-auto' : ''}`}>
       {/* Cover Banner */}
-      <div className="relative h-44 sm:h-56 md:h-64 w-full bg-gradient-to-r from-indigo-700 via-primary to-purple-700 overflow-hidden select-none">
+      <div className="relative h-44 sm:h-56 md:h-64 w-full bg-[#18262E] overflow-hidden select-none">
         {coverUrl && !coverError ? (
           <img
             src={coverUrl}
@@ -324,21 +324,21 @@ export default function UserProfileView({
             <button
               type="button"
               onClick={() => setCoverError(false)}
-              className="mt-2 px-3 py-1 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-xs font-semibold text-white transition-all border border-white/20"
+              className="mt-2 px-3 py-1 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-xs font-medium text-white transition-all border border-white/20"
             >
               Retry
             </button>
           </div>
         ) : (
-          <div className="w-full h-full flex items-center justify-center opacity-25">
-            <span className="font-extrabold text-4xl sm:text-6xl tracking-widest text-white">CHITHI চিঠি</span>
+          <div className="w-full h-full flex items-center justify-center opacity-20">
+            <span className="font-semibold text-3xl sm:text-5xl tracking-widest text-white">চিঠি CHITHI</span>
           </div>
         )}
 
         {isModal && onClose && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition-colors z-10"
+            className="absolute top-4 right-4 p-2 rounded-xl bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition-colors z-10"
             title="Close"
           >
             <X className="w-5 h-5" />
@@ -347,11 +347,11 @@ export default function UserProfileView({
       </div>
 
       {/* Profile Header & Identity Info */}
-      <div className="px-6 pb-6 relative bg-surface border-b border-border/70">
+      <div className="px-6 pb-6 relative bg-surface border-b border-border/50">
         <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between -mt-16 sm:-mt-20 mb-5 gap-4 pointer-events-none">
           {/* Avatar */}
           <div className="relative pointer-events-auto">
-            <div className="rounded-full p-1 bg-surface shadow-2xl">
+            <div className="rounded-full p-1 bg-surface shadow-md">
               <UserAvatar
                 displayName={profile.displayName}
                 username={profile.username}
@@ -362,12 +362,12 @@ export default function UserProfileView({
             </div>
           </div>
 
-          {/* Quick Action Buttons (Messenger Styled) */}
+          {/* Quick Action Buttons */}
           <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 w-full sm:w-auto pointer-events-auto">
             {isSelf ? (
               <button
                 onClick={() => router.push('/settings')}
-                className="px-4 py-2.5 rounded-2xl bg-surface-muted hover:bg-border text-xs font-semibold flex items-center gap-2 transition-colors shadow-sm"
+                className="px-4 py-2 rounded-xl bg-surface-muted hover:bg-border text-xs font-medium flex items-center gap-2 transition-colors"
               >
                 <span>Edit in Settings</span>
               </button>
@@ -378,7 +378,7 @@ export default function UserProfileView({
                   <button
                     onClick={handleStartMessage}
                     disabled={actionLoading}
-                    className="px-4 py-2.5 rounded-2xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary-hover shadow-md shadow-primary/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                    className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary-hover flex items-center gap-2 transition-colors active:scale-98"
                     title="Send Direct Message"
                   >
                     <MessageSquare className="w-4 h-4" />
@@ -390,7 +390,7 @@ export default function UserProfileView({
                 {isFriends && (
                   <button
                     onClick={handleStartVoiceCall}
-                    className="p-2.5 rounded-2xl bg-surface-muted hover:bg-primary/10 hover:text-primary text-foreground transition-all shadow-sm"
+                    className="p-2 rounded-xl bg-surface-muted hover:bg-primary/10 hover:text-primary text-foreground transition-colors"
                     title="Audio Call"
                   >
                     <Phone className="w-4 h-4" />
@@ -401,7 +401,7 @@ export default function UserProfileView({
                 {isFriends && (
                   <button
                     onClick={handleStartVideoCall}
-                    className="p-2.5 rounded-2xl bg-surface-muted hover:bg-primary/10 hover:text-primary text-foreground transition-all shadow-sm"
+                    className="p-2 rounded-xl bg-surface-muted hover:bg-primary/10 hover:text-primary text-foreground transition-colors"
                     title="Video Call"
                   >
                     <Video className="w-4 h-4" />
@@ -413,9 +413,9 @@ export default function UserProfileView({
                   <div className="relative">
                     <button
                       onClick={() => setActionMenuOpen(!actionMenuOpen)}
-                      className="px-4 py-2.5 rounded-2xl bg-surface-muted hover:bg-border text-foreground text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+                      className="px-4 py-2 rounded-xl bg-surface-muted hover:bg-border text-foreground text-xs font-medium flex items-center gap-1.5 transition-colors"
                     >
-                      <UserCheck className="w-4 h-4 text-emerald-500" />
+                      <UserCheck className="w-4 h-4 text-primary" />
                       <span>Friends</span>
                     </button>
                     {actionMenuOpen && (
@@ -467,7 +467,7 @@ export default function UserProfileView({
                   <button
                     onClick={handleSendFriendRequest}
                     disabled={actionLoading}
-                    className="px-4 py-2.5 rounded-2xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary-hover shadow-md shadow-primary/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                    className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary-hover flex items-center gap-2 transition-colors active:scale-98"
                   >
                     <UserPlus className="w-4 h-4" />
                     <span>Add Friend</span>
@@ -478,7 +478,7 @@ export default function UserProfileView({
                 {!isFriends && relationshipStatus !== 'blocked' && (
                   <button
                     onClick={handleBlockUser}
-                    className="p-2.5 rounded-2xl bg-surface-muted hover:bg-destructive/10 hover:text-destructive text-muted transition-colors"
+                    className="p-2 rounded-xl bg-surface-muted hover:bg-destructive/10 hover:text-destructive text-muted transition-colors"
                     title="Block User"
                   >
                     <UserX className="w-4 h-4" />
@@ -492,17 +492,17 @@ export default function UserProfileView({
         {/* User Identity Details */}
         <div className="text-center sm:text-left">
           <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+            <h2 className="text-2xl font-bold text-foreground tracking-tight">
               {profile.displayName}
             </h2>
             {isOnline && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold self-center sm:self-auto">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium self-center sm:self-auto">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                 Active Now
               </span>
             )}
           </div>
-          <p className="text-xs text-muted font-medium mt-0.5">@{profile.username}</p>
+          <p className="text-xs text-muted mt-0.5">@{profile.username}</p>
 
           {profile.bio ? (
             <p className="text-sm mt-3 text-foreground/90 max-w-2xl leading-relaxed whitespace-pre-wrap">
@@ -512,15 +512,15 @@ export default function UserProfileView({
             <p className="text-xs text-muted/70 italic mt-3">No bio written yet.</p>
           )}
 
-          {/* Messenger Badges Row */}
-          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 sm:gap-6 mt-5 pt-4 border-t border-border/60 text-xs text-muted">
-            <div className="flex items-center gap-1.5 font-semibold text-foreground">
+          {/* Badges Row */}
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 sm:gap-6 mt-5 pt-4 border-t border-border/50 text-xs text-muted">
+            <div className="flex items-center gap-1.5 font-medium text-foreground">
               <Users className="w-4 h-4 text-primary" />
               <span>{profile.friendCount || 0}</span>
               <span className="text-muted font-normal">Friends</span>
             </div>
             {profile.postCount !== null && (
-              <div className="flex items-center gap-1.5 font-semibold text-foreground">
+              <div className="flex items-center gap-1.5 font-medium text-foreground">
                 <Compass className="w-4 h-4 text-primary" />
                 <span>{profile.postCount || 0}</span>
                 <span className="text-muted font-normal">Moments</span>
@@ -537,12 +537,12 @@ export default function UserProfileView({
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-4 px-6 border-b border-border bg-surface sticky top-0 z-10 text-xs font-bold">
+      <div className="flex items-center gap-4 px-6 border-b border-border/50 bg-surface sticky top-0 z-10 text-xs font-medium">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`py-3.5 border-b-2 transition-all ${
+          className={`py-3 border-b-2 transition-colors ${
             activeTab === 'overview'
-              ? 'border-primary text-primary'
+              ? 'border-primary text-primary font-semibold'
               : 'border-transparent text-muted hover:text-foreground'
           }`}
         >

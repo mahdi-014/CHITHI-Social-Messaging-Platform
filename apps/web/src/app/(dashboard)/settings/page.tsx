@@ -337,17 +337,17 @@ export default function SettingsPage() {
       />
 
       {/* ============================================================== */}
-      {/* LEFT COLUMN: Messenger-inspired Category List */}
+      {/* LEFT COLUMN: Settings Navigation */}
       {/* ============================================================== */}
       <div
-        className={`w-full md:w-80 lg:w-96 border-r border-border bg-surface flex flex-col flex-shrink-0 transition-all ${
+        className={`w-full md:w-80 lg:w-96 border-r border-border/50 bg-surface flex flex-col flex-shrink-0 transition-all ${
           mobileViewingCategory ? 'hidden md:flex' : 'flex'
         }`}
       >
         {/* Top Header */}
-        <div className="p-4 md:p-6 border-b border-border">
+        <div className="p-4 md:p-6 border-b border-border/50">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
+            <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
               <span>Settings</span>
             </h1>
           </div>
@@ -356,7 +356,7 @@ export default function SettingsPage() {
           {user && (
             <Link
               href="/profile"
-              className="flex items-center gap-3.5 p-3 rounded-2xl bg-surface-muted/60 hover:bg-surface-muted border border-border/50 transition-all group shadow-sm"
+              className="flex items-center gap-3.5 p-3 rounded-xl bg-surface-muted/60 hover:bg-surface-muted border border-border/40 transition-colors group"
               title="Go to My Profile"
             >
               <UserAvatar
@@ -368,7 +368,7 @@ export default function SettingsPage() {
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <p className="font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                  <p className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
                     {user.displayName || user.username}
                   </p>
                   <ExternalLink className="w-3.5 h-3.5 text-muted group-hover:text-primary transition-colors flex-shrink-0" />
@@ -380,7 +380,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Categories Navigation */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-3 space-y-1">
           {categories.map((cat) => {
             const Icon = cat.icon;
             const isSelected = activeCategory === cat.id;
@@ -392,24 +392,24 @@ export default function SettingsPage() {
                   setActiveCategory(cat.id);
                   setMobileViewingCategory(true);
                 }}
-                className={`w-full flex items-center justify-between p-3 rounded-2xl transition-all text-left ${
+                className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-colors text-left ${
                   isSelected
-                    ? 'bg-primary/10 text-primary font-semibold shadow-xs'
+                    ? 'bg-primary/10 text-primary font-medium'
                     : 'text-foreground/80 hover:bg-surface-muted hover:text-foreground'
                 }`}
               >
-                <div className="flex items-center gap-3.5 min-w-0">
+                <div className="flex items-center gap-3 min-w-0">
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
                       isSelected
-                        ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                        ? 'bg-primary text-primary-foreground'
                         : 'bg-surface-muted text-muted'
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className={`text-sm truncate ${isSelected ? 'font-bold' : 'font-medium'}`}>
+                    <p className={`text-xs truncate ${isSelected ? 'font-semibold' : 'font-medium'}`}>
                       {cat.title}
                     </p>
                     <p className="text-[11px] text-muted truncate">{cat.description}</p>
@@ -418,12 +418,12 @@ export default function SettingsPage() {
 
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {cat.badge !== undefined && (
-                    <span className="px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-bold">
+                    <span className="px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-bold">
                       {cat.badge}
                     </span>
                   )}
                   <ChevronRight
-                    className={`w-4 h-4 md:hidden transition-transform ${
+                    className={`w-3.5 h-3.5 md:hidden transition-transform ${
                       isSelected ? 'text-primary' : 'text-muted'
                     }`}
                   />
@@ -434,12 +434,12 @@ export default function SettingsPage() {
         </div>
 
         {/* Footer / App Version Info */}
-        <div className="p-4 border-t border-border flex items-center justify-between text-xs text-muted">
+        <div className="p-3.5 border-t border-border/50 flex items-center justify-between text-xs text-muted">
           <div className="flex items-center gap-2">
-            <img src="/brand/logo/logo-symbol.svg" alt="CHITHI" className="w-4 h-4 object-contain rounded-md" />
-            <span>CHITHI v3.5 (Messenger Edition)</span>
+            <img src="/brand/logo/logo-symbol.svg" alt="CHITHI" className="w-4 h-4 object-contain rounded-sm" />
+            <span>CHITHI — Quiet Connection</span>
           </div>
-          <span className="w-2 h-2 rounded-full bg-emerald-500" title="Connected" />
+          <span className="w-2 h-2 rounded-full bg-primary" title="Connected" />
         </div>
       </div>
 

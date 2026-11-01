@@ -14,10 +14,10 @@ export default function IncomingCallModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-surface border border-border/80 shadow-2xl rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center flex flex-col items-center">
+      <div className="bg-surface border border-border/60 shadow-xl rounded-2xl p-6 sm:p-8 max-w-sm w-full text-center flex flex-col items-center">
         {/* Brand Header */}
-        <div className="flex items-center gap-1.5 mb-5 text-[11px] font-semibold text-muted tracking-wide uppercase">
-          <img src="/brand/logo/logo-symbol.svg" alt="CHITHI" className="w-4 h-4 object-contain rounded-md" />
+        <div className="flex items-center gap-1.5 mb-5 text-[11px] font-medium text-muted tracking-wide uppercase">
+          <img src="/brand/logo/logo-symbol.svg" alt="CHITHI" className="w-4 h-4 object-contain rounded-sm" />
           <span>CHITHI Secure Call</span>
         </div>
 
@@ -25,7 +25,7 @@ export default function IncomingCallModal() {
         <div className="relative mb-6">
           <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping duration-1000" />
           <span className="absolute -inset-2 rounded-full bg-primary/10 animate-pulse duration-700" />
-          <div className="relative w-24 h-24 rounded-full bg-primary/20 text-primary border-4 border-surface flex items-center justify-center font-bold text-3xl shadow-lg">
+          <div className="relative w-24 h-24 rounded-full bg-primary/20 text-primary border-4 border-surface flex items-center justify-center font-bold text-3xl shadow-md">
             {callerName ? callerName[0].toUpperCase() : 'U'}
           </div>
         </div>
@@ -33,7 +33,7 @@ export default function IncomingCallModal() {
         {/* Title & Info */}
         <h3 className="text-xl font-bold text-foreground mb-1">{callerName}</h3>
         <p className="text-xs text-muted mb-1">@{incomingCall.peerUser.username}</p>
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-8">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-8">
           {isVideo ? <Video className="w-3.5 h-3.5" /> : <Phone className="w-3.5 h-3.5" />}
           Incoming {isVideo ? 'Video' : 'Audio'} Call...
         </div>
@@ -45,7 +45,7 @@ export default function IncomingCallModal() {
             onClick={() => rejectCall('declined')}
             className="flex flex-col items-center gap-1.5 group"
           >
-            <div className="w-14 h-14 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-lg shadow-destructive/30 hover:scale-105 active:scale-95 transition-all">
+            <div className="w-13 h-13 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-md hover:opacity-90 active:scale-95 transition-all">
               <PhoneOff className="w-6 h-6" />
             </div>
             <span className="text-xs font-medium text-muted group-hover:text-foreground transition-colors">
@@ -58,7 +58,7 @@ export default function IncomingCallModal() {
             onClick={acceptCall}
             className="flex flex-col items-center gap-1.5 group"
           >
-            <div className="w-14 h-14 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 hover:scale-105 active:scale-95 transition-all">
+            <div className="w-13 h-13 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:bg-primary-hover active:scale-95 transition-all">
               {isVideo ? <Video className="w-6 h-6" /> : <Phone className="w-6 h-6" />}
             </div>
             <span className="text-xs font-medium text-muted group-hover:text-foreground transition-colors">
