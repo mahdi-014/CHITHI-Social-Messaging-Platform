@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
@@ -10,6 +10,7 @@ interface UserAvatarProps {
   displayName?: string;
   username?: string;
   avatarMediaId?: string | null;
+  previewUrl?: string | null;
   size?: AvatarSize;
   isOnline?: boolean;
   className?: string;
@@ -28,12 +29,18 @@ export default function UserAvatar({
   displayName,
   username,
   avatarMediaId,
+  previewUrl,
   size = 'md',
   isOnline = false,
   className = '',
 }: UserAvatarProps) {
   const [imgError, setImgError] = useState(false);
   const sizeConfig = sizeClasses[size];
+
+  // Reset image error state whenever avatar ID or preview changes
+  useEffect(() => {
+    setImgError(false);
+  }, [avatarMediaId, previewUrl]);
 
   const name = displayName || username || 'User';
   const initial = name.trim().charAt(0).toUpperCase();
@@ -56,7 +63,7 @@ export default function UserAvatar({
     return gradients[index];
   };
 
-  const avatarUrl = avatarMediaId ? `${API_URL}/media/${avatarMediaId}/file` : null;
+  const avatarUrl = previewUrl || (avatarMediaId ? `${API_URL}/media/${avatarMediaId}/file` : null);
 
   return (
     <div className={`relative flex-shrink-0 select-none ${className}`}>
@@ -71,6 +78,7 @@ export default function UserAvatar({
           <img
             src={avatarUrl}
             alt={name}
+            crossOrigin="anonymous"
             className="w-full h-full object-cover"
             onError={() => setImgError(true)}
           />

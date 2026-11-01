@@ -26,7 +26,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         const req = context.switchToHttp().getRequest();
         const token =
           req.headers?.authorization?.replace(/^Bearer\s+/i, '') ||
-          req.cookies?.['accessToken'];
+          req.cookies?.['accessToken'] ||
+          (req.query?.['token'] as string);
 
         if (token && this.jwtService && this.configService) {
           const secret =

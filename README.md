@@ -96,6 +96,8 @@ node apps/web/test/browser-calling.test.js
 ---
 
 ## 📚 Documentation
+- [Media Sharing & Profile Storage Architecture & API](MEDIA_API.md)
+- [Media Sharing & Profile Delivery Verification Report](MEDIA_SHARING_AND_PROFILE_DELIVERY_REPORT.md)
 - [Audio & Video Calling System (Phase 3.5)](AUDIO_VIDEO_CALLING.md)
 - [WebRTC Architecture & Signaling Protocol](WEBRTC_ARCHITECTURE.md)
 - [Coturn TURN Server Setup & Deployment](TURN_SERVER_SETUP.md)

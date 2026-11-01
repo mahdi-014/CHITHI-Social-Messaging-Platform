@@ -58,6 +58,7 @@ export default function UserProfileView({
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [coverError, setCoverError] = useState(false);
 
   const fetchProfileData = useCallback(async () => {
     setLoading(true);
@@ -302,8 +303,14 @@ export default function UserProfileView({
     <div className={`w-full flex flex-col ${isModal ? 'max-h-[85vh] overflow-y-auto' : ''}`}>
       {/* Cover Banner */}
       <div className="relative h-44 sm:h-56 md:h-64 w-full bg-gradient-to-r from-indigo-700 via-primary to-purple-700 overflow-hidden select-none">
-        {coverUrl ? (
-          <img src={coverUrl} alt="Cover" className="w-full h-full object-cover" />
+        {coverUrl && !coverError ? (
+          <img
+            src={coverUrl}
+            alt="Cover"
+            crossOrigin="anonymous"
+            className="w-full h-full object-cover"
+            onError={() => setCoverError(true)}
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center opacity-25">
             <span className="font-extrabold text-4xl sm:text-6xl tracking-widest text-white">CHITHI চিঠি</span>

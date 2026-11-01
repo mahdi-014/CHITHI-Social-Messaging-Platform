@@ -102,3 +102,9 @@ export async function uploadMediaFile(
     url: `${API_URL}/media/${mediaId}/file`,
   };
 }
+
+export function getMediaUrl(mediaAssetId: string | null | undefined): string {
+  if (!mediaAssetId) return '';
+  const token = typeof window !== 'undefined' ? localStorage.getItem('chithi_token') : null;
+  return `${API_URL}/media/${mediaAssetId}/file${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { apiFetch } from '../../../lib/api';
+import { apiFetch, uploadMediaFile, getMediaUrl } from '../../../lib/api';
 import { getSocket } from '../../../lib/socket';
 import { useAuthStore } from '../../../stores/auth.store';
 import { useChatStore, ConversationItem, MessageItem } from '../../../stores/chat.store';
@@ -20,12 +20,18 @@ import {
   Phone,
   Video,
   History,
+  Paperclip,
+  X,
+  Loader2,
+  Maximize2,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useWebRTCCall } from '../../../hooks/useWebRTCCall';
 import CallHistoryModal from '../../../components/calling/CallHistoryModal';
 import UserAvatar from '../../../components/ui/UserAvatar';
 import UserProfileModal from '../../../components/profile/UserProfileModal';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
 export default function ChatsPage() {
   const { user } = useAuthStore();
@@ -51,6 +57,51 @@ export default function ChatsPage() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [friendsModalOpen, setFriendsModalOpen] = useState(false);
   const [friendsList, setFriendsList] = useState<any[]>([]);
+
+  // Attachment & Media Sharing State
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [fileType, setFileType] = useState<'image' | 'video' | null>(null);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+  const [lightboxMedia, setLightboxMedia] = useState<{ url: string; type: 'image' | 'video' } | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleSelectMedia = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 100 * 1024 * 1024) {
+      alert('File size exceeds the 100 MB limit.');
+      return;
+    }
+
+    if (type === 'image' && !file.type.startsWith('image/')) {
+      alert('Please select a valid image file (JPEG, PNG, WebP, GIF).');
+      return;
+    }
+    if (type === 'video' && !file.type.startsWith('video/')) {
+      alert('Please select a valid video file (MP4, WebM).');
+      return;
+    }
+
+    const preview = URL.createObjectURL(file);
+    setSelectedFile(file);
+    setFilePreview(preview);
+    setFileType(type);
+    e.target.value = '';
+  };
+
+  const handleClearAttachment = () => {
+    if (filePreview) URL.revokeObjectURL(filePreview);
+    setSelectedFile(null);
+    setFilePreview(null);
+    setFileType(null);
+    setUploadingMedia(false);
+    setUploadProgress(null);
+  };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -131,7 +182,7 @@ export default function ChatsPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim() || !activeConversationId || !user) return;
+    if ((!inputText.trim() && !selectedFile) || !activeConversationId || !user) return;
 
     const text = inputText.trim();
     setInputText('');
@@ -141,30 +192,45 @@ export default function ChatsPage() {
 
     const clientMsgId = crypto.randomUUID();
 
+    let attachmentMediaIds: string[] = [];
+    let messageType: 'text' | 'image' | 'video' = 'text';
+
+    if (selectedFile && fileType) {
+      setUploadingMedia(true);
+      setUploadProgress('Uploading media...');
+      try {
+        const media = await uploadMediaFile(selectedFile, 'chat_attachment');
+        attachmentMediaIds = [media.id];
+        messageType = fileType;
+      } catch (err: any) {
+        alert(`Failed to upload media: ${err?.message || 'Upload error'}`);
+        setUploadingMedia(false);
+        setUploadProgress(null);
+        return;
+      } finally {
+        handleClearAttachment();
+      }
+    }
+
+    const payload = {
+      conversationId: activeConversationId,
+      clientMessageId: clientMsgId,
+      messageType,
+      body: text || (messageType === 'image' ? 'Sent an image' : messageType === 'video' ? 'Sent a video' : ''),
+      attachmentMediaIds,
+    };
+
     if (socket && socket.connected) {
-      socket.emit(
-        'message:send',
-        {
-          conversationId: activeConversationId,
-          clientMessageId: clientMsgId,
-          messageType: 'text',
-          body: text,
-        },
-        (res: any) => {
-          if (res?.message) {
-            appendMessage(activeConversationId, res.message);
-          }
-        },
-      );
+      socket.emit('message:send', payload, (res: any) => {
+        if (res?.message) {
+          appendMessage(activeConversationId, res.message);
+        }
+      });
     } else {
       try {
         const sent = await apiFetch<MessageItem>(`/conversations/${activeConversationId}/messages`, {
           method: 'POST',
-          body: {
-            clientMessageId: clientMsgId,
-            messageType: 'text',
-            body: text,
-          },
+          body: payload,
         });
 
         appendMessage(activeConversationId, sent);
@@ -415,6 +481,7 @@ export default function ChatsPage() {
                   const isMine = msg.senderId === user?.id;
                   const isRead = msg.receipts?.some((r) => r.readAt);
                   const isDelivered = msg.receipts?.some((r) => r.deliveredAt);
+                  const attachments = msg.attachments || [];
 
                   return (
                     <div
@@ -422,15 +489,62 @@ export default function ChatsPage() {
                       className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}
                     >
                       <div
-                        className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm shadow-sm ${
+                        className={`max-w-[85%] sm:max-w-[70%] p-2.5 rounded-2xl text-sm shadow-sm ${
                           isMine
                             ? 'bg-primary text-primary-foreground rounded-br-xs'
                             : 'bg-surface border border-border text-foreground rounded-bl-xs'
                         }`}
                       >
-                        <p className="whitespace-pre-wrap break-words">{msg.body}</p>
+                        {/* Attachments rendering */}
+                        {attachments.map((att: any) => {
+                          const mediaId = att.mediaAssetId || att.mediaAsset?.id;
+                          const mime = att.mediaAsset?.mimeType || '';
+                          const isVid = mime.startsWith('video/') || msg.messageType === 'video';
+                          const mediaUrl = getMediaUrl(mediaId);
+
+                          if (isVid) {
+                            return (
+                              <div key={att.id || mediaId} className="mb-2 rounded-xl overflow-hidden bg-black/90">
+                                <video
+                                  src={mediaUrl}
+                                  controls
+                                  playsInline
+                                  preload="metadata"
+                                  className="w-full max-h-72 object-contain rounded-xl"
+                                />
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div
+                              key={att.id || mediaId}
+                              className="mb-2 rounded-xl overflow-hidden cursor-pointer relative group bg-black/10"
+                              onClick={() => setLightboxMedia({ url: mediaUrl, type: 'image' })}
+                            >
+                              <img
+                                src={mediaUrl}
+                                alt="Attachment"
+                                crossOrigin="anonymous"
+                                className="w-full max-h-72 object-cover rounded-xl transition-transform hover:scale-101"
+                                loading="lazy"
+                              />
+                              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
+                                <span className="p-2 rounded-full bg-black/60 text-white backdrop-blur-xs">
+                                  <Maximize2 className="w-4 h-4" />
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {/* Text body if present */}
+                        {msg.body && (
+                          <p className="px-1.5 py-0.5 whitespace-pre-wrap break-words">{msg.body}</p>
+                        )}
+
                         <div
-                          className={`flex items-center justify-end gap-1 text-[10px] mt-1 ${
+                          className={`flex items-center justify-end gap-1 text-[10px] mt-1 px-1.5 ${
                             isMine ? 'text-primary-foreground/75' : 'text-muted'
                           }`}
                         >
@@ -465,21 +579,100 @@ export default function ChatsPage() {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Selected Attachment Preview Bar */}
+            {selectedFile && (
+              <div className="p-3 bg-surface border-t border-border flex items-center justify-between gap-3 animate-in fade-in">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-14 h-14 rounded-xl overflow-hidden bg-background border border-border flex-shrink-0 relative">
+                    {fileType === 'image' && filePreview ? (
+                      <img src={filePreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-primary bg-primary/10">
+                        <Video className="w-6 h-6" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold truncate text-foreground">{selectedFile.name}</p>
+                    <p className="text-[11px] text-muted">
+                      {(selectedFile.size / (1024 * 1024)).toFixed(1)} MB • {fileType === 'image' ? 'Image' : 'Video'}
+                    </p>
+                    {uploadingMedia && (
+                      <p className="text-[11px] text-primary flex items-center gap-1 font-medium mt-0.5">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        {uploadProgress || 'Uploading...'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleClearAttachment}
+                  disabled={uploadingMedia}
+                  className="p-1.5 rounded-full hover:bg-surface-muted text-muted hover:text-foreground transition-colors disabled:opacity-40"
+                  title="Remove attachment"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Hidden file pickers */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={(e) => handleSelectMedia(e, 'image')}
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              data-testid="chat-image-input"
+              className="hidden"
+            />
+            <input
+              type="file"
+              ref={videoInputRef}
+              onChange={(e) => handleSelectMedia(e, 'video')}
+              accept="video/mp4,video/webm"
+              data-testid="chat-video-input"
+              className="hidden"
+            />
+
             {/* Message Composer */}
             <form onSubmit={handleSendMessage} className="p-3 border-t border-border bg-surface flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingMedia}
+                  title="Attach Photo"
+                  className="p-2 rounded-xl text-muted hover:text-primary hover:bg-surface-muted transition-colors disabled:opacity-40"
+                >
+                  <ImageIcon className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => videoInputRef.current?.click()}
+                  disabled={uploadingMedia}
+                  title="Attach Video"
+                  className="p-2 rounded-xl text-muted hover:text-primary hover:bg-surface-muted transition-colors disabled:opacity-40"
+                >
+                  <Video className="w-5 h-5" />
+                </button>
+              </div>
+
               <input
                 type="text"
-                placeholder="Type a message..."
+                placeholder={selectedFile ? 'Add a caption (optional)...' : 'Type a message...'}
                 value={inputText}
                 onChange={handleInputChange}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-background border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                disabled={uploadingMedia}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-background border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
               />
               <button
                 type="submit"
-                disabled={!inputText.trim()}
-                className="p-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover transition-colors disabled:opacity-40"
+                disabled={uploadingMedia || (!inputText.trim() && !selectedFile)}
+                className="p-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover transition-colors disabled:opacity-40 flex items-center justify-center"
               >
-                <Send className="w-5 h-5" />
+                {uploadingMedia ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
               </button>
             </form>
           </>
@@ -552,6 +745,43 @@ export default function ChatsPage() {
         onClose={() => setProfileModalUserId(null)}
         targetUserId={profileModalUserId || undefined}
       />
+
+      {/* Lightbox / Media Viewer Modal */}
+      {lightboxMedia && (
+        <div
+          className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setLightboxMedia(null)}
+        >
+          <button
+            onClick={() => setLightboxMedia(null)}
+            className="absolute top-4 right-4 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-colors z-50"
+            title="Close viewer"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          <div
+            className="max-w-4xl max-h-[85vh] overflow-hidden rounded-2xl flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {lightboxMedia.type === 'image' ? (
+              <img
+                src={lightboxMedia.url}
+                alt="Enlarged media"
+                crossOrigin="anonymous"
+                className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+              />
+            ) : (
+              <video
+                src={lightboxMedia.url}
+                controls
+                autoPlay
+                className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl"
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

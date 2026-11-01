@@ -34,11 +34,11 @@ export class S3StorageProvider implements StorageProvider {
     return this.fallbackLocal.putObject(key, data, mimeType);
   }
 
-  async getObject(key: string): Promise<GetObjectResult> {
+  async getObject(key: string, range?: { start: number; end: number }): Promise<GetObjectResult> {
     if (!this.bucket) {
-      return this.fallbackLocal.getObject(key);
+      return this.fallbackLocal.getObject(key, range);
     }
-    return this.fallbackLocal.getObject(key);
+    return this.fallbackLocal.getObject(key, range);
   }
 
   async deleteObject(key: string): Promise<void> {

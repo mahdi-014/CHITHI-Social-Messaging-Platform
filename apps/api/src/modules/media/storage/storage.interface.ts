@@ -16,7 +16,7 @@ export interface StorageProvider {
     mimeType: string,
   ): Promise<PutObjectResult>;
 
-  getObject(key: string): Promise<GetObjectResult>;
+  getObject(key: string, range?: { start: number; end: number }): Promise<GetObjectResult>;
 
   deleteObject(key: string): Promise<void>;
 

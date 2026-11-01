@@ -40,9 +40,12 @@ export default function MyProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [successNote, setSuccessNote] = useState(false);
 
-  // Photo Upload State
+  // Photo Upload & Preview State
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [coverError, setCoverError] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -134,6 +137,9 @@ export default function MyProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Show immediate preview
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarPreview(previewUrl);
     setUploadingAvatar(true);
     try {
       const media = await uploadMediaFile(file, 'avatar');
@@ -149,6 +155,7 @@ export default function MyProfilePage() {
       }));
     } catch (err: any) {
       alert(`Avatar upload failed: ${err.message || 'Error uploading image'}`);
+      setAvatarPreview(null);
     } finally {
       setUploadingAvatar(false);
     }
@@ -159,6 +166,10 @@ export default function MyProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Show immediate preview
+    const previewUrl = URL.createObjectURL(file);
+    setCoverPreview(previewUrl);
+    setCoverError(false);
     setUploadingCover(true);
     try {
       const media = await uploadMediaFile(file, 'cover');
@@ -167,12 +178,14 @@ export default function MyProfilePage() {
         body: { coverMediaId: media.id },
       });
 
+      updateUser({ coverMediaId: media.id });
       setProfileData((prev: any) => ({
         ...prev,
         coverMediaId: media.id,
       }));
     } catch (err: any) {
       alert(`Cover upload failed: ${err.message || 'Error uploading image'}`);
+      setCoverPreview(null);
     } finally {
       setUploadingCover(false);
     }
@@ -188,6 +201,7 @@ export default function MyProfilePage() {
   }
 
   const coverUrl = profileData?.coverMediaId ? `${API_URL}/media/${profileData.coverMediaId}/file` : null;
+  const activeCover = coverPreview || (coverUrl && !coverError ? coverUrl : null);
 
   return (
     <div className="flex-1 overflow-y-auto bg-background">
@@ -196,8 +210,14 @@ export default function MyProfilePage() {
         <div className="bg-surface border border-border shadow-sm rounded-3xl overflow-hidden mb-6">
           {/* Cover Photo Banner */}
           <div className="relative h-44 sm:h-60 md:h-72 w-full bg-gradient-to-r from-indigo-700 via-primary to-purple-800 overflow-hidden group select-none">
-            {coverUrl ? (
-              <img src={coverUrl} alt="Cover" className="w-full h-full object-cover" />
+            {activeCover ? (
+              <img
+                src={activeCover}
+                alt="Cover"
+                crossOrigin="anonymous"
+                className="w-full h-full object-cover"
+                onError={() => setCoverError(true)}
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center opacity-30">
                 <span className="font-extrabold text-4xl sm:text-7xl tracking-widest text-white">চিঠি CHITHI</span>
@@ -210,6 +230,7 @@ export default function MyProfilePage() {
               ref={coverInputRef}
               onChange={handleCoverFileChange}
               accept="image/jpeg,image/png,image/webp"
+              data-testid="cover-file-input"
               className="hidden"
             />
             <button
@@ -236,6 +257,7 @@ export default function MyProfilePage() {
                   ref={avatarInputRef}
                   onChange={handleAvatarFileChange}
                   accept="image/jpeg,image/png,image/webp"
+                  data-testid="avatar-file-input"
                   className="hidden"
                 />
                 <div className="rounded-full p-1 bg-surface shadow-2xl">
@@ -243,6 +265,7 @@ export default function MyProfilePage() {
                     displayName={profileData?.displayName || user?.displayName}
                     username={user?.username}
                     avatarMediaId={profileData?.avatarMediaId || user?.avatarMediaId}
+                    previewUrl={avatarPreview}
                     size="2xl"
                     isOnline={true}
                   />

@@ -50,17 +50,19 @@ export class LocalStorageProvider implements StorageProvider {
     }
   }
 
-  async getObject(key: string): Promise<GetObjectResult> {
+  async getObject(key: string, range?: { start: number; end: number }): Promise<GetObjectResult> {
     const fullPath = this.resolveSafePath(key);
     if (!fs.existsSync(fullPath)) {
       throw new NotFoundException('Object not found in storage');
     }
 
     const stat = await fs.promises.stat(fullPath);
-    const stream = fs.createReadStream(fullPath);
+    const stream = range
+      ? fs.createReadStream(fullPath, { start: range.start, end: range.end })
+      : fs.createReadStream(fullPath);
     return {
       stream,
-      contentLength: stat.size,
+      contentLength: range ? range.end - range.start + 1 : stat.size,
     };
   }
 

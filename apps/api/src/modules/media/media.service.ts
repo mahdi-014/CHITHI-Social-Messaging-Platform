@@ -204,6 +204,7 @@ export class MediaService {
       include: {
         avatarForProfiles: true,
         coverForProfiles: true,
+        avatarForConversations: true,
         postMedia: {
           include: {
             post: true,
@@ -230,7 +231,11 @@ export class MediaService {
     }
 
     // 1. Avatars and Covers are public
-    if (asset.avatarForProfiles.length > 0 || asset.coverForProfiles.length > 0) {
+    if (
+      asset.avatarForProfiles.length > 0 ||
+      asset.coverForProfiles.length > 0 ||
+      asset.avatarForConversations.length > 0
+    ) {
       return true;
     }
 
@@ -263,7 +268,7 @@ export class MediaService {
     return false;
   }
 
-  async getMediaStream(mediaAssetId: string) {
+  async getMediaStream(mediaAssetId: string, range?: { start: number; end: number }) {
     const asset = await this.prisma.mediaAsset.findUnique({
       where: { id: mediaAssetId },
     });
@@ -272,11 +277,12 @@ export class MediaService {
       throw new NotFoundException('Media asset not found');
     }
 
-    const obj = await this.storage.getObject(asset.storageKey);
+    const obj = await this.storage.getObject(asset.storageKey, range);
     return {
       stream: obj.stream,
       mimeType: asset.mimeType,
       fileSize: Number(asset.fileSize),
+      contentLength: obj.contentLength,
     };
   }
 
