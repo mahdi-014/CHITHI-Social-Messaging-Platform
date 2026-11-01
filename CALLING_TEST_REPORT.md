@@ -152,3 +152,4 @@ The following screenshots were automatically generated during the real browser t
 4. `call-04-incoming-video.png`: Incoming video call modal notification.
 5. `call-05-active-video-call.png`: Active WebRTC video call with remote video feed, local video inset, mic/camera controls, and duration badge.
 6. `call-06-call-history.png`: Call history modal displaying logged call sessions, durations, and timestamps.
+

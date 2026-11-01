@@ -57,3 +57,4 @@ All media streams travel directly peer-to-peer (P2P) between clients encrypted v
 - **Automated Backend Tests**: 48/48 tests passed (100% success rate).
 - **Automated Real Browser E2E**: 19/19 checks passed across 2 Chromium contexts with fake media devices (100% success rate).
 - **Visual Proof**: Screenshots captured in `apps/web/test/screenshots/` (`call-01` to `call-06`).
+

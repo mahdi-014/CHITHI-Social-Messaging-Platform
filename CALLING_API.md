@@ -245,3 +245,4 @@ Clean session termination:
 socket.emit('call:end', { callId, reason: 'caller_hung_up' });
 socket.on('call:ended', (data: { callId, durationSeconds, reason }) => { ... });
 ```
+

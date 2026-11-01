@@ -13,3 +13,4 @@ export class CallQueryDto {
   @Max(50)
   limit?: number = 20;
 }
+

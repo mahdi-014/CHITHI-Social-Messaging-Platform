@@ -18,6 +18,8 @@ import {
   AlertCircle,
   Loader2,
 } from 'lucide-react';
+import UserAvatar from '../../../components/ui/UserAvatar';
+import UserProfileModal from '../../../components/profile/UserProfileModal';
 
 export default function FriendsPage() {
   const router = useRouter();
@@ -29,6 +31,10 @@ export default function FriendsPage() {
   const [incomingRequests, setIncomingRequests] = useState<any[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Profile modal state
+  const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
+  const [profileModalUsername, setProfileModalUsername] = useState<string | null>(null);
 
   // Exact username search state
   const [searchUsername, setSearchUsername] = useState('');
@@ -234,17 +240,26 @@ export default function FriendsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {friends.map((f) => (
-                <div key={f.friendId} className="bg-surface border border-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-12 h-12 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-base flex-shrink-0">
-                      {f.displayName ? f.displayName[0].toUpperCase() : 'U'}
-                    </div>
+                <div key={f.friendId} className="bg-surface border border-border rounded-2xl p-4 flex items-center justify-between shadow-sm hover:border-primary/30 transition-all">
+                  <button
+                    onClick={() => setProfileModalUserId(f.friendId)}
+                    className="flex items-center gap-3 min-w-0 text-left hover:opacity-85 transition-opacity"
+                    title="View Profile"
+                  >
+                    <UserAvatar
+                      displayName={f.displayName}
+                      username={f.username}
+                      avatarMediaId={f.avatarMediaId}
+                      size="md"
+                    />
                     <div className="min-w-0">
-                      <h4 className="font-semibold text-sm truncate">{f.displayName}</h4>
+                      <h4 className="font-bold text-sm truncate hover:underline text-foreground">
+                        {f.displayName}
+                      </h4>
                       <p className="text-xs text-muted truncate">@{f.username}</p>
                       {f.bio && <p className="text-xs text-muted/80 truncate mt-0.5">{f.bio}</p>}
                     </div>
-                  </div>
+                  </button>
 
                   <div className="flex items-center gap-1.5 flex-shrink-0 ml-3">
                     <button
@@ -292,15 +307,23 @@ export default function FriendsPage() {
               <div className="space-y-3">
                 {incomingRequests.map((req) => (
                   <div key={req.id} className="bg-surface border border-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm">
-                        {req.sender?.profile?.displayName ? req.sender.profile.displayName[0].toUpperCase() : 'U'}
-                      </div>
+                    <button
+                      onClick={() => setProfileModalUserId(req.sender?.id)}
+                      className="flex items-center gap-3 text-left hover:opacity-85 transition-opacity"
+                    >
+                      <UserAvatar
+                        displayName={req.sender?.profile?.displayName}
+                        username={req.sender?.username}
+                        avatarMediaId={req.sender?.profile?.avatarMediaId}
+                        size="md"
+                      />
                       <div>
-                        <h4 className="font-semibold text-sm">{req.sender?.profile?.displayName || req.sender?.username}</h4>
+                        <h4 className="font-bold text-sm text-foreground hover:underline">
+                          {req.sender?.profile?.displayName || req.sender?.username}
+                        </h4>
                         <p className="text-xs text-muted">@{req.sender?.username}</p>
                       </div>
-                    </div>
+                    </button>
 
                     <div className="flex items-center gap-2">
                       <button
@@ -337,15 +360,23 @@ export default function FriendsPage() {
               <div className="space-y-3">
                 {outgoingRequests.map((req) => (
                   <div key={req.id} className="bg-surface border border-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm">
-                        {req.receiver?.profile?.displayName ? req.receiver.profile.displayName[0].toUpperCase() : 'U'}
-                      </div>
+                    <button
+                      onClick={() => setProfileModalUserId(req.receiver?.id)}
+                      className="flex items-center gap-3 text-left hover:opacity-85 transition-opacity"
+                    >
+                      <UserAvatar
+                        displayName={req.receiver?.profile?.displayName}
+                        username={req.receiver?.username}
+                        avatarMediaId={req.receiver?.profile?.avatarMediaId}
+                        size="md"
+                      />
                       <div>
-                        <h4 className="font-semibold text-sm">{req.receiver?.profile?.displayName || req.receiver?.username}</h4>
+                        <h4 className="font-bold text-sm text-foreground hover:underline">
+                          {req.receiver?.profile?.displayName || req.receiver?.username}
+                        </h4>
                         <p className="text-xs text-muted">@{req.receiver?.username}</p>
                       </div>
-                    </div>
+                    </button>
 
                     <button
                       onClick={() => handleCancelOutgoing(req.id)}
@@ -411,16 +442,24 @@ export default function FriendsPage() {
             )}
 
             {searchResult && (
-              <div className="mt-6 p-4 rounded-xl border border-border bg-background flex items-center justify-between">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-base">
-                    {searchResult.displayName ? searchResult.displayName[0].toUpperCase() : 'U'}
-                  </div>
+              <div className="mt-6 p-4 rounded-2xl border border-border bg-surface flex items-center justify-between shadow-sm">
+                <button
+                  onClick={() => setProfileModalUserId(searchResult.id)}
+                  className="flex items-center gap-3.5 text-left hover:opacity-85 transition-opacity"
+                >
+                  <UserAvatar
+                    displayName={searchResult.displayName}
+                    username={searchResult.username}
+                    avatarMediaId={searchResult.avatarMediaId}
+                    size="md"
+                  />
                   <div>
-                    <h4 className="font-semibold text-sm">{searchResult.displayName}</h4>
+                    <h4 className="font-bold text-sm text-foreground hover:underline">
+                      {searchResult.displayName}
+                    </h4>
                     <p className="text-xs text-muted">@{searchResult.username}</p>
                   </div>
-                </div>
+                </button>
 
                 <div>
                   {searchResult.friendshipStatus === 'self' ? (
@@ -451,6 +490,17 @@ export default function FriendsPage() {
           </div>
         </div>
       )}
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        isOpen={!!(profileModalUserId || profileModalUsername)}
+        onClose={() => {
+          setProfileModalUserId(null);
+          setProfileModalUsername(null);
+        }}
+        targetUserId={profileModalUserId || undefined}
+        username={profileModalUsername || undefined}
+      />
     </div>
   );
 }

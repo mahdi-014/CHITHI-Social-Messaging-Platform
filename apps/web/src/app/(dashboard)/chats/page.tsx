@@ -24,6 +24,8 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { useWebRTCCall } from '../../../hooks/useWebRTCCall';
 import CallHistoryModal from '../../../components/calling/CallHistoryModal';
+import UserAvatar from '../../../components/ui/UserAvatar';
+import UserProfileModal from '../../../components/profile/UserProfileModal';
 
 export default function ChatsPage() {
   const { user } = useAuthStore();
@@ -41,6 +43,7 @@ export default function ChatsPage() {
 
   const { startCall } = useWebRTCCall();
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [inputText, setInputText] = useState('');
@@ -273,18 +276,17 @@ export default function ChatsPage() {
                 <button
                   key={conv.id}
                   onClick={() => setActiveConversationId(conv.id)}
-                  className={`w-full p-3.5 flex items-start gap-3.5 text-left transition-colors ${
+                  className={`w-full p-3.5 flex items-start gap-3.5 text-left transition-colors rounded-2xl ${
                     isActive ? 'bg-primary/10' : 'hover:bg-surface-muted/60'
                   }`}
                 >
-                  <div className="relative flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-base">
-                      {conv.title ? conv.title[0].toUpperCase() : 'C'}
-                    </div>
-                    {isOnline && (
-                      <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-success border-2 border-surface" />
-                    )}
-                  </div>
+                  <UserAvatar
+                    displayName={conv.title}
+                    username={conv.otherParticipant?.username}
+                    avatarMediaId={conv.otherParticipant?.avatarMediaId}
+                    size="md"
+                    isOnline={isOnline}
+                  />
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
@@ -331,25 +333,36 @@ export default function ChatsPage() {
                   <ArrowLeft className="w-5 h-5" />
                 </button>
 
-                <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm">
-                    {activeConv.title ? activeConv.title[0].toUpperCase() : 'U'}
-                  </div>
-                  {activeConv.otherParticipant && onlineUsers.has(activeConv.otherParticipant.id) && (
-                    <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-success border-2 border-surface" />
-                  )}
-                </div>
+                <button
+                  onClick={() => {
+                    if (activeConv.otherParticipant?.id) {
+                      setProfileModalUserId(activeConv.otherParticipant.id);
+                    }
+                  }}
+                  className="flex items-center gap-3 hover:opacity-85 transition-opacity text-left cursor-pointer"
+                  title="View user profile"
+                >
+                  <UserAvatar
+                    displayName={activeConv.title}
+                    username={activeConv.otherParticipant?.username}
+                    avatarMediaId={activeConv.otherParticipant?.avatarMediaId}
+                    size="md"
+                    isOnline={activeConv.otherParticipant ? onlineUsers.has(activeConv.otherParticipant.id) : false}
+                  />
 
-                <div>
-                  <h2 className="font-bold text-sm leading-tight">{activeConv.title}</h2>
-                  <p className="text-xs text-muted">
-                    {activeConv.otherParticipant && onlineUsers.has(activeConv.otherParticipant.id)
-                      ? 'Online'
-                      : activeConv.otherParticipant
-                      ? `@${activeConv.otherParticipant.username}`
-                      : 'Direct Chat'}
-                  </p>
-                </div>
+                  <div>
+                    <h2 className="font-bold text-sm leading-tight hover:underline flex items-center gap-1.5">
+                      <span>{activeConv.title}</span>
+                    </h2>
+                    <p className="text-xs text-muted">
+                      {activeConv.otherParticipant && onlineUsers.has(activeConv.otherParticipant.id)
+                        ? 'Active Now'
+                        : activeConv.otherParticipant
+                        ? `@${activeConv.otherParticipant.username}`
+                        : 'Direct Chat'}
+                    </p>
+                  </div>
+                </button>
               </div>
 
               {/* Calling Action Buttons */}
@@ -527,6 +540,13 @@ export default function ChatsPage() {
         isOpen={historyModalOpen}
         onClose={() => setHistoryModalOpen(false)}
         onCallUser={(convId, type, peer) => startCall(convId, type, peer)}
+      />
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        isOpen={!!profileModalUserId}
+        onClose={() => setProfileModalUserId(null)}
+        targetUserId={profileModalUserId || undefined}
       />
     </div>
   );

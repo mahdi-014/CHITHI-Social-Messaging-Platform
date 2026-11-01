@@ -61,3 +61,44 @@ export async function apiFetch<T = any>(
 
   return data as T;
 }
+
+export async function uploadMediaFile(
+  file: File,
+  category: 'avatar' | 'cover' | 'post_image' | 'post_video' | 'chat_attachment' = 'avatar',
+): Promise<{ id: string; url: string }> {
+  const intent = await apiFetch<{ mediaAssetId: string; storageKey: string }>(
+    '/media/upload-intents',
+    {
+      method: 'POST',
+      body: {
+        mimeType: file.type || 'image/jpeg',
+        fileSize: file.size,
+        category,
+        fileName: file.name || 'upload.jpg',
+      },
+    },
+  );
+
+  const mediaId = intent.mediaAssetId;
+
+  const token = typeof window !== 'undefined' ? localStorage.getItem('chithi_token') : null;
+  const uploadRes = await fetch(`${API_URL}/media/${mediaId}/upload`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': file.type || 'image/jpeg',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: file,
+  });
+
+  if (!uploadRes.ok) {
+    throw new Error('Failed to upload file content');
+  }
+
+  await apiFetch(`/media/${mediaId}/complete`, { method: 'POST' });
+
+  return {
+    id: mediaId,
+    url: `${API_URL}/media/${mediaId}/file`,
+  };
+}

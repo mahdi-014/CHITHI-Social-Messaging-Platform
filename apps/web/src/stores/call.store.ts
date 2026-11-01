@@ -97,3 +97,4 @@ export const useCallStore = create<CallStoreState>((set) => ({
       connectionQuality: 'connecting',
     }),
 }));
+

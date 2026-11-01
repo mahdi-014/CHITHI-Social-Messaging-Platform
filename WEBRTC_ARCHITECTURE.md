@@ -108,3 +108,4 @@ sequenceDiagram
 2. **Server Reflexive Candidates (STUN)**: Public IP addresses discovered via STUN queries to `stun.l.google.com:19302`.
 3. **Relay Candidates (TURN)**: Relayed packets through Coturn TURN server over UDP or TCP fallback when symmetrical NAT is encountered.
 4. **ICE Candidate Trickling**: Candidates are sent immediately as they are gathered, shortening connection establishment from 5-10 seconds to sub-500 milliseconds.
+

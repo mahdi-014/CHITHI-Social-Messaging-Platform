@@ -6,3 +6,4 @@ export class CallActionDto {
   @MaxLength(100)
   reason?: string;
 }
+
