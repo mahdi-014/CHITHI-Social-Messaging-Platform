@@ -336,12 +336,12 @@ export default function ChatsPage() {
       {/* 1. CHITHI CONVERSATION LIST PANEL */}
       {/* ======================================================== */}
       <div
-        className={`w-full md:w-80 lg:w-96 flex flex-col border-r border-border/70 bg-surface select-none ${
+        className={`w-full md:w-80 lg:w-96 flex flex-col bg-surface select-none ${
           activeConversationId ? 'hidden md:flex' : 'flex'
         }`}
       >
         {/* Top Header — Search Bar & New Chat (Exact Mockup Match) */}
-        <div className="p-3 border-b border-border/50 flex items-center gap-2 bg-surface">
+        <div className="p-3 flex items-center gap-2 bg-surface">
           <h1 className="text-sm font-bold tracking-tight text-foreground whitespace-nowrap">
             Chats
           </h1>
@@ -480,7 +480,7 @@ export default function ChatsPage() {
         {activeConv ? (
           <>
             {/* Minimal Chat Header */}
-            <div className="h-15 border-b border-border/70 bg-surface/95 backdrop-blur-xs px-4 flex items-center justify-between z-10">
+            <div className="h-15 bg-surface/95 backdrop-blur-xs px-4 flex items-center justify-between z-10">
               <div className="flex items-center gap-3 min-w-0">
                 <button
                   onClick={() => setActiveConversationId(null)}
@@ -712,7 +712,7 @@ export default function ChatsPage() {
 
             {/* Selected Attachment Preview Bar */}
             {selectedFile && (
-              <div className="p-3 bg-surface border-t border-border/70 flex items-center justify-between gap-3 animate-in fade-in">
+              <div className="p-3 bg-surface flex items-center justify-between gap-3 animate-in fade-in">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-12 h-12 rounded-xl overflow-hidden bg-background flex-shrink-0 relative">
                     {fileType === 'image' && filePreview ? (
@@ -769,7 +769,7 @@ export default function ChatsPage() {
 
             {/* CHITHI Message Composer (Exact Mockup Match) */}
             <div className="p-3 bg-background relative">
-              <form onSubmit={handleSendMessage} className="flex items-center gap-2 bg-surface rounded-full px-3.5 py-1.5 border border-border/40 shadow-xs">
+              <form onSubmit={handleSendMessage} className="flex items-center gap-2 bg-surface rounded-full px-3.5 py-1.5 shadow-sm">
                 <button
                   type="button"
                   title="Emoji"
@@ -838,8 +838,8 @@ export default function ChatsPage() {
       {/* 3. RIGHT PROFILE DETAIL PANEL (Exact Mockup Match) */}
       {/* ======================================================== */}
       {activeConv && showRightPanel && (
-        <aside className="hidden xl:flex flex-col w-72 2xl:w-80 border-l border-border/50 bg-surface p-4 overflow-y-auto select-none flex-shrink-0">
-          <div className="bg-surface rounded-2xl overflow-hidden border border-border/50 shadow-xs">
+        <aside className="hidden xl:flex flex-col w-72 2xl:w-80 bg-surface p-4 overflow-y-auto select-none flex-shrink-0">
+          <div className="bg-surface rounded-2xl overflow-hidden shadow-xs">
             {/* Scenic Cover Banner */}
             <div className="h-36 w-full overflow-hidden relative bg-surface-muted">
               <img
@@ -890,7 +890,7 @@ export default function ChatsPage() {
               </button>
 
               {/* Stats Counters */}
-              <div className="grid grid-cols-3 gap-2 mt-5 py-3 border-y border-border/40 text-center">
+              <div className="grid grid-cols-3 gap-2 mt-5 py-3 text-center">
                 <div>
                   <div className="font-bold text-sm text-foreground">
                     {partnerProfile?.friendCount ?? 124}
@@ -926,8 +926,8 @@ export default function ChatsPage() {
       {/* ======================================================== */}
       {friendsModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-md bg-surface border border-border rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[80vh]">
-            <div className="p-4 border-b border-border flex items-center justify-between">
+          <div className="w-full max-w-md bg-surface rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="p-4 flex items-center justify-between">
               <h3 className="font-bold text-base text-foreground">New Conversation</h3>
               <button
                 onClick={() => setFriendsModalOpen(false)}
@@ -937,7 +937,7 @@ export default function ChatsPage() {
               </button>
             </div>
 
-            <div className="p-3 flex-1 overflow-y-auto divide-y divide-border/50">
+            <div className="p-3 flex-1 overflow-y-auto">
               {friendsList.length === 0 ? (
                 <div className="p-6 text-center text-sm text-muted">
                   You don&apos;t have any accepted friends yet. Go to the Friends tab to connect with someone!

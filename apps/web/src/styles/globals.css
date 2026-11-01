@@ -18,8 +18,8 @@
     --secondary-foreground: #19242B;
     --muted: #78838A;
     --muted-foreground: #9AA4AA;
-    --border: #E5E7E2;
-    --border-subtle: #ECEEEA;
+    --border: transparent;
+    --border-subtle: transparent;
     --chat-incoming: #FFFFFF;
     --chat-incoming-text: #19242B;
     --chat-outgoing: #D5F1F3;
@@ -48,8 +48,8 @@
     --secondary-foreground: #F0F3F1;
     --muted: #9BA9AE;
     --muted-foreground: #738288;
-    --border: #26323A;
-    --border-subtle: #1F282F;
+    --border: transparent;
+    --border-subtle: transparent;
     --chat-incoming: #202B33;
     --chat-incoming-text: #F0F3F1;
     --chat-outgoing: #1A545C;

@@ -107,7 +107,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <CallProvider>
       <div className="flex h-screen bg-background text-foreground overflow-hidden">
         {/* Desktop Navigation Sidebar — Original Minimal CHITHI Style */}
-        <aside className="hidden md:flex flex-col justify-between w-20 lg:w-60 border-r border-border/70 bg-surface p-3 lg:p-4 z-40 flex-shrink-0 select-none">
+        <aside className="hidden md:flex flex-col justify-between w-20 lg:w-60 bg-surface p-3 lg:p-4 z-40 flex-shrink-0 select-none">
           <div className="flex flex-col gap-6">
             {/* Minimal Brand Logo */}
             <Link
@@ -154,7 +154,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           {/* Bottom User Area */}
-          <div className="flex flex-col gap-2 pt-3 border-t border-border/50">
+          <div className="flex flex-col gap-2 pt-3">
             <div className="flex items-center justify-between px-1">
               <button
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -205,7 +205,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
 
         {/* Mobile Bottom Navigation Bar */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-surface/95 backdrop-blur-md border-t border-border/70 flex items-center justify-around px-2 z-50">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-surface/95 backdrop-blur-md shadow-lg flex items-center justify-around px-2 z-50">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname.startsWith(item.href);
