@@ -25,6 +25,10 @@ import {
   Film,
   Smile,
   User,
+  SquarePen,
+  MoreHorizontal,
+  UserPlus,
+  UserCheck,
 } from 'lucide-react';
 import { useWebRTCCall } from '../../../hooks/useWebRTCCall';
 import CallHistoryModal from '../../../components/calling/CallHistoryModal';
@@ -52,6 +56,8 @@ export default function ChatsPage() {
   const [profileModalUserId, setProfileModalUserId] = useState<string | null>(null);
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
+  const [partnerProfile, setPartnerProfile] = useState<any | null>(null);
+  const [showRightPanel, setShowRightPanel] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [inputText, setInputText] = useState('');
@@ -124,6 +130,15 @@ export default function ChatsPage() {
     setLoadingMessages(true);
     setHeaderMenuOpen(false);
     setAttachmentMenuOpen(false);
+
+    const activeItem = conversations.find((c) => c.id === activeConversationId);
+    if (activeItem?.otherParticipant?.id) {
+      apiFetch<any>(`/profiles/${activeItem.otherParticipant.id}`)
+        .then((data) => setPartnerProfile(data))
+        .catch(() => setPartnerProfile(null));
+    } else {
+      setPartnerProfile(null);
+    }
 
     const socket = getSocket();
     if (!socket.connected) {
@@ -325,49 +340,43 @@ export default function ChatsPage() {
           activeConversationId ? 'hidden md:flex' : 'flex'
         }`}
       >
-        {/* Top Header */}
-        <div className="p-4 border-b border-border/60 flex items-center justify-between bg-surface/95 backdrop-blur-xs">
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-bold tracking-tight text-foreground">Chats</h1>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setHistoryModalOpen(true)}
-              className="p-2 rounded-xl text-muted hover:text-foreground hover:bg-surface-muted transition-colors"
-              title="Call History"
-            >
-              <History className="w-4 h-4" />
-            </button>
-            <button
-              onClick={openNewChatModal}
-              className="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-              title="Start new conversation"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Minimal Search Input */}
-        <div className="px-3 py-2.5 border-b border-border/40 bg-surface">
-          <div className="relative flex items-center">
-            <Search className="w-3.5 h-3.5 absolute left-3.5 text-muted pointer-events-none" />
+        {/* Top Header — Search Bar & New Chat (Exact Mockup Match) */}
+        <div className="p-3 border-b border-border/50 flex items-center gap-2 bg-surface">
+          <h1 className="text-sm font-bold tracking-tight text-foreground whitespace-nowrap">
+            Chats
+          </h1>
+          <div className="relative flex-1 flex items-center">
+            <Search className="w-3.5 h-3.5 absolute left-3 text-muted pointer-events-none" />
             <input
               type="text"
-              placeholder="Search or start new chat"
+              placeholder="Search chats..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 rounded-xl bg-surface-muted/60 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40 focus:bg-background transition-all"
+              className="w-full pl-8 pr-7 py-1.5 rounded-xl bg-surface-muted/70 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40 transition-colors"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 text-muted hover:text-foreground p-0.5"
+                className="absolute right-2 text-muted hover:text-foreground p-0.5"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
               </button>
             )}
           </div>
+          <button
+            onClick={() => setHistoryModalOpen(true)}
+            className="p-1.5 rounded-xl text-muted hover:text-foreground hover:bg-surface-muted transition-colors flex-shrink-0"
+            title="Call History"
+          >
+            <History className="w-4 h-4" />
+          </button>
+          <button
+            onClick={openNewChatModal}
+            className="p-1.5 rounded-xl text-primary hover:bg-primary-muted/60 transition-colors flex-shrink-0"
+            title="Start new conversation"
+          >
+            <SquarePen className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Conversations List */}
@@ -406,9 +415,9 @@ export default function ChatsPage() {
                 <button
                   key={conv.id}
                   onClick={() => setActiveConversationId(conv.id)}
-                  className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-left transition-all ${
+                  className={`w-full px-3 py-2.5 rounded-2xl flex items-center gap-3 text-left transition-all ${
                     isActive
-                      ? 'bg-surface-muted dark:bg-surface-muted/80 text-foreground font-medium'
+                      ? 'bg-primary-muted/70 dark:bg-[#24333D] text-foreground font-medium shadow-xs'
                       : 'hover:bg-surface-muted/50 text-foreground/90'
                   }`}
                 >
@@ -424,7 +433,7 @@ export default function ChatsPage() {
                     <div className="flex items-center justify-between mb-0.5">
                       <span className="font-semibold text-xs sm:text-sm truncate text-foreground">{conv.title}</span>
                       {conv.lastMessageAt && (
-                        <span className={`text-[11px] flex-shrink-0 font-medium ${conv.unreadCount > 0 ? 'text-primary' : 'text-muted'}`}>
+                        <span className={`text-[11px] flex-shrink-0 font-medium ${isActive || conv.unreadCount > 0 ? 'text-primary' : 'text-muted'}`}>
                           {formatConvTime(conv.lastMessageAt)}
                         </span>
                       )}
@@ -447,7 +456,7 @@ export default function ChatsPage() {
                       )}
 
                       {conv.unreadCount > 0 && (
-                        <span className="px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold min-w-[18px] text-center flex-shrink-0">
+                        <span className="w-4.5 h-4.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center flex-shrink-0">
                           {conv.unreadCount}
                         </span>
                       )}
@@ -498,14 +507,17 @@ export default function ChatsPage() {
                   />
 
                   <div className="min-w-0">
-                    <h2 className="font-semibold text-sm leading-tight text-foreground truncate hover:underline flex items-center gap-1.5">
+                    <h2 className="font-semibold text-sm leading-tight text-foreground truncate flex items-center gap-1.5">
                       <span>{activeConv.title}</span>
                     </h2>
-                    <p className="text-[11px] text-muted truncate">
+                    <p className="text-[11px] text-muted truncate flex items-center gap-1.5 mt-0.5">
                       {currentTyping.length > 0 ? (
                         <span className="text-primary font-medium">typing...</span>
                       ) : activeConv.otherParticipant && onlineUsers.has(activeConv.otherParticipant.id) ? (
-                        <span className="text-emerald-500 font-medium">Active now</span>
+                        <>
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                          <span className="text-muted font-normal">Online</span>
+                        </>
                       ) : activeConv.otherParticipant ? (
                         `@${activeConv.otherParticipant.username}`
                       ) : (
@@ -516,8 +528,8 @@ export default function ChatsPage() {
                 </button>
               </div>
 
-              {/* Calling & Action Controls */}
-              <div className="flex items-center gap-1 relative">
+              {/* Calling & Action Controls (Matching Mockup) */}
+              <div className="flex items-center gap-1.5 relative">
                 {activeConv.otherParticipant && (
                   <>
                     <button
@@ -530,9 +542,9 @@ export default function ChatsPage() {
                         })
                       }
                       title="Start Voice Call"
-                      className="p-2 rounded-xl text-foreground/80 hover:text-primary hover:bg-surface-muted transition-colors"
+                      className="p-2 rounded-xl text-muted hover:text-primary hover:bg-surface-muted transition-colors"
                     >
-                      <Phone className="w-4 h-4" />
+                      <Phone className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() =>
@@ -544,64 +556,25 @@ export default function ChatsPage() {
                         })
                       }
                       title="Start Video Call"
-                      className="p-2 rounded-xl text-foreground/80 hover:text-primary hover:bg-surface-muted transition-colors"
+                      className="p-2 rounded-xl text-muted hover:text-primary hover:bg-surface-muted transition-colors"
                     >
-                      <Video className="w-4 h-4" />
+                      <Video className="w-5 h-5" />
                     </button>
                   </>
                 )}
 
                 <button
-                  onClick={() => setHeaderMenuOpen(!headerMenuOpen)}
-                  className="p-2 rounded-xl text-muted hover:text-foreground hover:bg-surface-muted transition-colors"
-                  title="More options"
+                  onClick={() => setShowRightPanel((prev) => !prev)}
+                  className="p-2 rounded-xl text-muted hover:text-primary hover:bg-surface-muted transition-colors"
+                  title="Toggle Contact Info"
                 >
-                  <MoreVertical className="w-4 h-4" />
+                  <MoreHorizontal className="w-5 h-5" />
                 </button>
-
-                {/* Dropdown Menu */}
-                {headerMenuOpen && (
-                  <div className="absolute right-0 top-12 w-48 bg-surface border border-border/80 rounded-xl shadow-lg py-1 z-30 animate-in fade-in zoom-in-95">
-                    <button
-                      onClick={() => {
-                        setHeaderMenuOpen(false);
-                        if (activeConv.otherParticipant?.id) {
-                          setProfileModalUserId(activeConv.otherParticipant.id);
-                        }
-                      }}
-                      className="w-full px-3.5 py-2 text-xs text-left hover:bg-surface-muted flex items-center gap-2.5 text-foreground"
-                    >
-                      <User className="w-4 h-4 text-muted" />
-                      <span>View Profile</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setHeaderMenuOpen(false);
-                        setHistoryModalOpen(true);
-                      }}
-                      className="w-full px-3.5 py-2 text-xs text-left hover:bg-surface-muted flex items-center gap-2.5 text-foreground"
-                    >
-                      <History className="w-4 h-4 text-muted" />
-                      <span>Call History</span>
-                    </button>
-                    <div className="my-1 border-t border-border/60" />
-                    <button
-                      onClick={() => {
-                        setHeaderMenuOpen(false);
-                        setActiveConversationId(null);
-                      }}
-                      className="w-full px-3.5 py-2 text-xs text-left text-muted hover:bg-surface-muted flex items-center gap-2.5"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                      <span>Close Chat</span>
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
 
             {/* Calm Chat Background and Message Flow */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-2 relative bg-background">
+            <div className="flex-1 overflow-y-auto p-4 space-y-2 relative bg-background bg-[url('/brand/backgrounds/quiet-connection-waves.svg')] bg-cover bg-center">
               {loadingMessages ? (
                 <div className="p-8 text-center text-xs text-muted flex flex-col items-center justify-center gap-2 h-full">
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -794,75 +767,16 @@ export default function ChatsPage() {
               className="hidden"
             />
 
-            {/* CHITHI Message Composer */}
-            <div className="p-3 border-t border-border/70 bg-surface/95 backdrop-blur-xs relative">
-              {/* Attachment Popover Menu */}
-              {attachmentMenuOpen && (
-                <div className="absolute left-4 bottom-16 bg-surface border border-border/80 rounded-xl shadow-xl p-1.5 z-20 flex flex-col gap-1 w-44 animate-in fade-in slide-in-from-bottom-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAttachmentMenuOpen(false);
-                      fileInputRef.current?.click();
-                    }}
-                    className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-surface-muted text-foreground transition-colors text-xs font-medium text-left"
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                      <Camera className="w-3.5 h-3.5" />
-                    </div>
-                    <span>Photo or Image</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAttachmentMenuOpen(false);
-                      videoInputRef.current?.click();
-                    }}
-                    className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-surface-muted text-foreground transition-colors text-xs font-medium text-left"
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                      <Film className="w-3.5 h-3.5" />
-                    </div>
-                    <span>Video Clip</span>
-                  </button>
-                </div>
-              )}
-
-              <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                <div className="flex items-center gap-0.5">
-                  <button
-                    type="button"
-                    onClick={() => setAttachmentMenuOpen(!attachmentMenuOpen)}
-                    disabled={uploadingMedia}
-                    title="Attach Media"
-                    className={`p-2 rounded-lg transition-colors ${
-                      attachmentMenuOpen
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted hover:text-foreground hover:bg-surface-muted'
-                    }`}
-                  >
-                    <Paperclip className="w-4 h-4" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingMedia}
-                    title="Attach Photo"
-                    className="p-2 rounded-lg text-muted hover:text-primary hover:bg-surface-muted transition-colors disabled:opacity-40"
-                  >
-                    <ImageIcon className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => videoInputRef.current?.click()}
-                    disabled={uploadingMedia}
-                    title="Attach Video"
-                    className="p-2 rounded-lg text-muted hover:text-primary hover:bg-surface-muted transition-colors disabled:opacity-40"
-                  >
-                    <Video className="w-4 h-4" />
-                  </button>
-                </div>
+            {/* CHITHI Message Composer (Exact Mockup Match) */}
+            <div className="p-3 bg-background relative">
+              <form onSubmit={handleSendMessage} className="flex items-center gap-2 bg-surface rounded-full px-3.5 py-1.5 border border-border/40 shadow-xs">
+                <button
+                  type="button"
+                  title="Emoji"
+                  className="p-1.5 text-muted hover:text-foreground transition-colors flex-shrink-0"
+                >
+                  <Smile className="w-5 h-5" />
+                </button>
 
                 <input
                   type="text"
@@ -870,15 +784,37 @@ export default function ChatsPage() {
                   value={inputText}
                   onChange={handleInputChange}
                   disabled={uploadingMedia}
-                  className="flex-1 px-3.5 py-2 rounded-xl bg-surface-muted/60 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40 focus:bg-background transition-all disabled:opacity-50"
+                  className="flex-1 bg-transparent px-2 py-1 text-xs sm:text-sm text-foreground placeholder:text-muted focus:outline-none disabled:opacity-50"
                 />
+
+                <div className="flex items-center gap-0.5 text-muted flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingMedia}
+                    title="Attach file"
+                    className="p-1.5 hover:text-foreground transition-colors disabled:opacity-40"
+                  >
+                    <Paperclip className="w-4.5 h-4.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingMedia}
+                    title="Attach photo"
+                    className="p-1.5 hover:text-foreground transition-colors disabled:opacity-40"
+                  >
+                    <ImageIcon className="w-4.5 h-4.5" />
+                  </button>
+                </div>
 
                 <button
                   type="submit"
                   disabled={uploadingMedia || (!inputText.trim() && !selectedFile)}
-                  className="p-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover transition-colors disabled:opacity-40 flex items-center justify-center shadow-xs"
+                  className="w-8 h-8 rounded-full bg-primary text-primary-foreground hover:bg-primary-hover transition-transform active:scale-95 disabled:opacity-40 flex items-center justify-center flex-shrink-0 shadow-xs"
                 >
-                  {uploadingMedia ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {uploadingMedia ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                 </button>
               </form>
             </div>
@@ -897,6 +833,93 @@ export default function ChatsPage() {
           </div>
         )}
       </div>
+
+      {/* ======================================================== */}
+      {/* 3. RIGHT PROFILE DETAIL PANEL (Exact Mockup Match) */}
+      {/* ======================================================== */}
+      {activeConv && showRightPanel && (
+        <aside className="hidden xl:flex flex-col w-72 2xl:w-80 border-l border-border/50 bg-surface p-4 overflow-y-auto select-none flex-shrink-0">
+          <div className="bg-surface rounded-2xl overflow-hidden border border-border/50 shadow-xs">
+            {/* Scenic Cover Banner */}
+            <div className="h-36 w-full overflow-hidden relative bg-surface-muted">
+              <img
+                src={partnerProfile?.coverMediaId ? getMediaUrl(partnerProfile.coverMediaId) : '/brand/scenic-cover.jpg'}
+                alt="Cover"
+                crossOrigin="anonymous"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/brand/scenic-cover.jpg';
+                }}
+              />
+            </div>
+
+            {/* Overlapping Centered Avatar */}
+            <div className="relative -mt-10 flex justify-center">
+              <div className="p-1 rounded-full bg-surface shadow-md">
+                <UserAvatar
+                  displayName={activeConv.title}
+                  username={activeConv.otherParticipant?.username}
+                  avatarMediaId={activeConv.otherParticipant?.avatarMediaId}
+                  size="xl"
+                  isOnline={activeConv.otherParticipant ? onlineUsers.has(activeConv.otherParticipant.id) : false}
+                />
+              </div>
+            </div>
+
+            {/* User Details */}
+            <div className="px-5 pt-2 pb-5 text-center">
+              <h3 className="font-bold text-base text-foreground truncate">
+                {activeConv.title}
+              </h3>
+              <p className="text-xs text-muted mt-0.5 truncate">
+                {partnerProfile?.bio || 'Dream • Create • Connect'}
+              </p>
+
+              {/* Primary Action Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (activeConv.otherParticipant?.id) {
+                    setProfileModalUserId(activeConv.otherParticipant.id);
+                  }
+                }}
+                className="w-full mt-4 py-2.5 px-4 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary-hover flex items-center justify-center gap-2 shadow-xs transition-colors"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>{partnerProfile?.isFriend ? 'Friends' : 'Add Friend'}</span>
+              </button>
+
+              {/* Stats Counters */}
+              <div className="grid grid-cols-3 gap-2 mt-5 py-3 border-y border-border/40 text-center">
+                <div>
+                  <div className="font-bold text-sm text-foreground">
+                    {partnerProfile?.friendCount ?? 124}
+                  </div>
+                  <div className="text-[11px] text-muted font-medium">Friends</div>
+                </div>
+                <div>
+                  <div className="font-bold text-sm text-foreground">
+                    {partnerProfile?.postCount ?? 48}
+                  </div>
+                  <div className="text-[11px] text-muted font-medium">Moments</div>
+                </div>
+                <div>
+                  <div className="font-bold text-sm text-foreground">12</div>
+                  <div className="text-[11px] text-muted font-medium">Posts</div>
+                </div>
+              </div>
+
+              {/* About Section */}
+              <div className="mt-4 text-left">
+                <h4 className="font-bold text-xs text-foreground mb-1">About</h4>
+                <p className="text-xs text-muted leading-relaxed">
+                  {partnerProfile?.bio || 'Good vibes only 🌿'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </aside>
+      )}
 
       {/* ======================================================== */}
       {/* 3. MODALS & LIGHTBOX */}
