@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD, APP_FILTER } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import configuration from './config/configuration';
 import { DatabaseModule } from './database/database.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -26,6 +27,13 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
       isGlobal: true,
       load: [configuration],
     }),
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60000, // 60 seconds
+        limit: 120, // 120 requests per minute
+      },
+    ]),
     DatabaseModule,
     HealthModule,
     AuthModule,
@@ -42,6 +50,10 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     NotificationsModule,
   ],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

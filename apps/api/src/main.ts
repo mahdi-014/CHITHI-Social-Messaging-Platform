@@ -2,11 +2,24 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
+
+// Polyfill BigInt JSON serialization
+(BigInt.prototype as any).toJSON = function () {
+  return Number(this);
+};
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
+
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
 
   app.use(cookieParser());
 

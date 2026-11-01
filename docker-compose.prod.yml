@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: chithi-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-chithi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-chithi_prod_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-chithi_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-chithi} -d ${POSTGRES_DB:-chithi_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - chithi-network
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: chithi-api
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-chithi}:${POSTGRES_PASSWORD:-chithi_prod_secret}@postgres:5432/${POSTGRES_DB:-chithi_db}?connection_limit=20&pool_timeout=10
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-chithi_super_secret_jwt_access_key_2026_prod}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-chithi_super_secret_jwt_refresh_key_2026_prod}
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-local}
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - chithi-network
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: chithi-web
+    restart: always
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: http://localhost/api/v1
+      NEXT_PUBLIC_SOCKET_URL: http://localhost
+    networks:
+      - chithi-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: chithi-nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+      - web
+    networks:
+      - chithi-network
+
+volumes:
+  postgres_data:
+    driver: local
+  uploads_data:
+    driver: local
+
+networks:
+  chithi-network:
+    driver: bridge

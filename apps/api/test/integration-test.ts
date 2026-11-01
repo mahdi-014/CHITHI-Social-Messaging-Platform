@@ -391,6 +391,131 @@ async function runTests() {
   });
   assert(blockedReq.status === 403, 'Blocked user cannot send friend request (403 Forbidden)');
 
+  // 10. REFRESH TOKEN ROTATION & LOGOUT
+  console.log('\n--- 10. Refresh Token Rotation & Session Revocation ---');
+  const refreshRes = await request('/auth/refresh', {
+    method: 'POST',
+    body: { refreshToken: regA.data.refreshToken },
+  });
+  assert(refreshRes.status === 200 && !!refreshRes.data.accessToken, 'Refresh token rotated successfully to new token pair');
+  const rotatedAccessA = refreshRes.data?.accessToken;
+  const rotatedRefreshA = refreshRes.data?.refreshToken;
+
+  // Replay attack prevention: Old refresh token must be rejected
+  const replayRes = await request('/auth/refresh', {
+    method: 'POST',
+    body: { refreshToken: regA.data.refreshToken },
+  });
+  assert(replayRes.status === 401, 'Replay attack prevented: Revoked old refresh token rejected with 401 Unauthorized');
+
+  // Verify rotated access token works
+  const meRes = await request('/users/me', { token: rotatedAccessA });
+  assert(meRes.status === 200 && meRes.data.username === userA_name, 'Rotated access token authenticated user profile');
+
+  // Logout session revocation
+  const logoutRes = await request('/auth/logout', {
+    method: 'POST',
+    token: rotatedAccessA,
+  });
+  assert(logoutRes.status === 200, 'User logged out and session revoked');
+
+  // Trying to use rotated refresh token after logout must fail
+  const postLogoutRefresh = await request('/auth/refresh', {
+    method: 'POST',
+    body: { refreshToken: rotatedRefreshA },
+  });
+  assert(postLogoutRefresh.status === 401, 'Refresh after logout rejected with 401 (session revoked)');
+
+  // 11. MEDIA PIPELINE, MAGIC BYTES & PRIVACY ENFORCEMENT
+  console.log('\n--- 11. Media Upload Pipeline & Access Control ---');
+  const uploadIntent = await request('/media/upload-intents', {
+    method: 'POST',
+    token: tokenB,
+    body: {
+      fileName: 'avatar_photo.jpg',
+      fileSize: 128,
+      mimeType: 'image/jpeg',
+      category: 'avatar',
+    },
+  });
+  assert(uploadIntent.status === 201 && !!uploadIntent.data.mediaAssetId, 'Upload intent created for image/jpeg');
+  const mediaAssetId = uploadIntent.data?.mediaAssetId;
+
+  // Upload invalid binary (text pretending to be JPEG) -> Magic bytes rejection
+  const invalidBuffer = Buffer.from('FAKE_BINARY_DATA_NOT_JPEG_HEADER');
+  const invalidUploadRes = await fetch(`${API_BASE}/media/${mediaAssetId}/upload`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'image/jpeg' },
+    body: invalidBuffer,
+  });
+  assert(invalidUploadRes.status === 400, 'Spoofed file rejected: Magic bytes mismatch returns 400 Bad Request');
+
+  // Upload valid JPEG binary (starts with standard JPEG magic bytes: FF D8 FF E0)
+  const validJpegBuffer = Buffer.alloc(128);
+  validJpegBuffer[0] = 0xff;
+  validJpegBuffer[1] = 0xd8;
+  validJpegBuffer[2] = 0xff;
+  validJpegBuffer[3] = 0xe0;
+
+  const validUploadRes = await fetch(`${API_BASE}/media/${mediaAssetId}/upload`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'image/jpeg' },
+    body: validJpegBuffer,
+  });
+  const uploadJson = await validUploadRes.json();
+  assert(validUploadRes.status === 200 && uploadJson.success === true, 'Genuine JPEG binary uploaded and stored successfully');
+
+  // Complete upload
+  const completeRes = await request(`/media/${mediaAssetId}/complete`, {
+    method: 'POST',
+    token: tokenB,
+  });
+  assert(completeRes.status === 200 && completeRes.data.processingStatus === 'ready', 'Upload completed and status marked ready');
+
+  // Owner downloads media stream
+  const ownerDownload = await fetch(`${API_BASE}/media/${mediaAssetId}/file`, {
+    headers: { Authorization: `Bearer ${tokenB}` },
+  });
+  const downloadedBuffer = Buffer.from(await ownerDownload.arrayBuffer());
+  assert(
+    ownerDownload.status === 200 && downloadedBuffer.equals(validJpegBuffer),
+    'Owner downloaded media stream matching uploaded bytes bit-for-bit',
+  );
+
+  // Stranger unauthorized download test on private media
+  // First create a non-avatar media intent for user B (e.g. post video or unattached media)
+  const privateIntent = await request('/media/upload-intents', {
+    method: 'POST',
+    token: tokenB,
+    body: {
+      fileName: 'secret_file.pdf',
+      fileSize: 64,
+      mimeType: 'application/pdf',
+      category: 'post_image',
+    },
+  });
+  const privateMediaId = privateIntent.data?.mediaAssetId;
+  const pdfBuffer = Buffer.from('%PDF-1.4\nTest PDF content for CHITHI media testing.\n');
+  await fetch(`${API_BASE}/media/${privateMediaId}/upload`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/pdf' },
+    body: pdfBuffer,
+  });
+
+  // Stranger User C attempts to download User B's unshared private PDF
+  const strangerDownload = await fetch(`${API_BASE}/media/${privateMediaId}/file`, {
+    headers: { Authorization: `Bearer ${tokenC}` },
+  });
+  assert(strangerDownload.status === 403, 'Stranger download of unshared media blocked with 403 Forbidden');
+
+  // 12. SECURITY HEADERS & RATE LIMITING
+  console.log('\n--- 12. Security Hardening & Rate Limiting ---');
+  const healthCheck = await fetch('http://localhost:4000/health');
+  const helmetHeader = healthCheck.headers.get('x-content-type-options');
+  const frameHeader = healthCheck.headers.get('x-frame-options');
+  assert(helmetHeader === 'nosniff', 'Security header X-Content-Type-Options: nosniff enforced');
+  assert(frameHeader === 'SAMEORIGIN', 'Security header X-Frame-Options: SAMEORIGIN enforced');
+
   console.log('\n========================================');
   console.log(`TOTAL TESTS: ${passed + failed}`);
   console.log(`PASSED: ${passed}`);

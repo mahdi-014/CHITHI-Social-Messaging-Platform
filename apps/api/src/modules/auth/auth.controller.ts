@@ -6,9 +6,12 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Req,
   Res,
+  BadRequestException,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Request, Response } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -21,6 +24,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   async register(
@@ -33,6 +37,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(
@@ -49,9 +54,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async refresh(
     @Body() dto: RefreshTokenDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.authService.refresh(dto.refreshToken);
+    const token = dto?.refreshToken || (req as any).cookies?.['refreshToken'];
+    if (!token) {
+      throw new BadRequestException('Refresh token is required');
+    }
+    const result = await this.authService.refresh(token);
     this.setCookies(response, result.accessToken, result.refreshToken);
     return result;
   }

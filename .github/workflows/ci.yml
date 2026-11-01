@@ -1,0 +1,94 @@
+name: CI / Production Quality Gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: chithi
+          POSTGRES_PASSWORD: chithi_secret
+          POSTGRES_DB: chithi_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Synchronize Database Schema
+        env:
+          DATABASE_URL: postgresql://chithi:chithi_secret@localhost:5432/chithi_db
+        run: |
+          pnpm --filter @chithi/api prisma:push
+
+      - name: Build NestJS API
+        run: pnpm --filter @chithi/api build
+
+      - name: Build Next.js Web Application
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
+          NEXT_PUBLIC_SOCKET_URL: http://localhost:4000
+        run: pnpm --filter @chithi/web build
+
+      - name: Start API Daemon for Integration Testing
+        env:
+          NODE_ENV: test
+          PORT: 4000
+          DATABASE_URL: postgresql://chithi:chithi_secret@localhost:5432/chithi_db
+          JWT_ACCESS_SECRET: chithi_super_secret_jwt_access_key_2026_dev
+          JWT_REFRESH_SECRET: chithi_super_secret_jwt_refresh_key_2026_dev
+          STORAGE_PROVIDER: local
+        run: |
+          node apps/api/dist/main.js &
+          sleep 5
+          curl -f http://localhost:4000/health
+
+      - name: Run Functional Integration Tests (51 Tests)
+        env:
+          DATABASE_URL: postgresql://chithi:chithi_secret@localhost:5432/chithi_db
+        run: pnpm --filter @chithi/api exec ts-node test/integration-test.ts
+
+      - name: Verify Database Backup & Recovery Parity
+        env:
+          DATABASE_URL: postgresql://chithi:chithi_secret@localhost:5432/chithi_db
+        run: node apps/api/scripts/verify-backup-recovery.js
